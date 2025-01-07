@@ -1,12 +1,12 @@
 :global(body) {
   margin: 0;
   font-family: Arial, sans-serif;
-  background: white !important;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  color: #000;
+  background: white !important; /* Overrides other styles with high specificity */
+  display: flex; /* Flexbox layout for centering */
+  justify-content: center; /* Centers content horizontally */
+  align-items: center; /* Centers content vertically */
+  height: 100vh; /* Sets the height to 100% of the viewport */
+  color: #000; /* Sets text color to black */
 }
 
 body {
