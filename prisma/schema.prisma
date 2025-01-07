@@ -1,0 +1,37 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Category {
+  product
+  service
+}
+
+model Create_review {
+  id          String   @id @default(cuid())
+  userId      String
+  category    Category
+  name        String
+  Description String
+  url         String?
+  images      String[]
+}
+
+model Review_submission {
+  dummyId    Int     @id @default(autoincrement())
+  id          String 
+  userId      String
+  userImage   String?
+  userName    String?
+  isAnonymous Boolean  @default(false)
+  ratings     Int
+  review      String
+  summary     String
+  images      String[]
+  createdAt   DateTime @default(now())
+}

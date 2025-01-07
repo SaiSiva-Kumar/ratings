@@ -1,0 +1,324 @@
+:global(body) {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: white !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  color: #000;
+}
+
+body {
+  margin: 0;
+  background-color: #fff;
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.container {
+  margin: 0 auto;
+  padding: 16px;
+  max-width: 400px;
+  width: 100%;
+  height: 700px;
+  box-sizing: border-box;
+  background-color: #fff;
+  border-radius: 12px;
+}
+
+.backButton {
+  background: none;
+  border: none;
+  color: #000;
+  font-size: 16px;
+  margin-bottom: 16px;
+  cursor: pointer;
+}
+
+.imageContainer {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin-bottom: 16px;
+}
+
+.image {
+  flex-shrink: 0;
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: bold;
+  margin: 8px 0;
+}
+
+.description {
+  color: #666;
+  margin-bottom: 16px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.addReviewButton {
+  background-color: #28a745;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 16px;
+  cursor: pointer;
+  width: 100%;
+  max-width: 400px;
+  margin: 16px auto 0;
+  display: block;
+}
+
+.addReviewButton:hover {
+  background-color: #218838;
+}
+
+.reviewTypeContainer {
+  margin-top: 16px;
+  border-radius: 12px;
+}
+
+.reviewOption {
+  margin-bottom: 16px;
+}
+
+.reviewOption strong {
+  font-size: 16px;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.reviewOption p {
+  font-size: 14px;
+  color: #666;
+}
+
+.signedReviewButton {
+  background-color: black;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 16px;
+  cursor: pointer;
+  width: 100%;
+  max-width: 400px;
+  margin: 16px auto 0;
+  display: block;
+}
+
+.anonymousReviewButton {
+  background-color: #28a745;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 16px;
+  cursor: pointer;
+  width: 100%;
+  max-width: 400px;
+  margin: 16px auto 0;
+  display: block;
+}
+
+.anonymousReviewButton:hover {
+  background-color: #218838;
+}
+
+.error,
+.loading {
+  text-align: center;
+  font-size: 18px;
+  color: #666;
+  margin-top: 20px;
+}
+
+.reviewInputContainer p {
+  text-align: left;
+  width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* MODIFIED: Star Rating Styles */
+.starRating {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* This ensures the text and stars are left-aligned */
+  margin-bottom: 10px;
+}
+
+.starRating p {
+  margin-bottom: 8px;
+  font-size: 14px;
+  align-self: flex-start; /* Additional alignment to ensure left positioning */
+}
+
+.starsContainer {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  align-self: flex-start; 
+}
+
+.star {
+  font-size: 24px;
+  color: grey;
+  cursor: pointer;
+}
+
+.star.filled {
+  color: gold;
+}
+
+/* MODIFIED: Review Input Styles */
+.detailedReview {
+  width: 90%; /* Reduced width */
+  height: 100px;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  align-self: center; /* Center the textarea */
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.reviewSummary {
+  width: 90%; /* Reduced width */
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  align-self: center; /* Center the input */
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Optional: Center labels */
+.reviewInputContainer {
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.reviewInputContainer p {
+  text-align: left;
+  width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* MODIFIED: Upload Section Styles */
+.uploadSection {
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.uploadLabel {
+  font-size: 14px;
+  margin-bottom: 8px;
+  align-self: flex-start;
+}
+
+.uploadInput {
+  display: none;
+}
+
+.uploadButton {
+  display: inline-block;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  color: #333;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  text-align: center;
+  width: 90%;
+  max-width: 300px;
+}
+
+.uploadButton:hover {
+  background-color: #e0e0e0;
+}
+
+.submitButton {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 16px;
+  cursor: pointer;
+  width: 100%;
+  display: block;
+}
+
+.submitButton:hover {
+  background-color: #0056b3;
+}
+
+.removePreviewButton {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background-color: red;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+  z-index: 10;
+}
+
+.previewItem {
+  position: relative;
+  flex-shrink: 0;
+  width: 120px;
+  height: 120px;
+}
+
+.userInfoContainer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 90%;
+  margin: 0 auto 10px;
+}
+
+.userAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.userName {
+  font-size: 14px;
+  color: #333;
+}
