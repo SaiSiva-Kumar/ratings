@@ -47,6 +47,13 @@ export default function ViewReviewPage() {
   const [reviewText, setReviewText] = useState<string>('');
   const [reviewSummary, setReviewSummary] = useState<string>('');
 
+  // NEW: Add state for reviews and stats
+  const [reviews, setReviews] = useState<ReviewSubmission[]>([]);
+  const [stats, setStats] = useState({
+    signedInReviewCount: 0,
+    averageRating: 0
+  });
+
   useEffect(() => {
     const fetchReview = async () => {
       if (!id) return;
@@ -73,8 +80,15 @@ export default function ViewReviewPage() {
         }
         const data = await response.json();
         
+        // NEW: Update reviews and stats state
+        setReviews(data.reviews);
+        setStats({
+          signedInReviewCount: data.signedInReviewCount,
+          averageRating: data.averageRating
+        });
+        
         // Comprehensive console logging
-        console.log('Signed-In Reviews:', data.reviews.map(review => ({
+        console.log('Total Reviews:', data.reviews.map(review => ({
           id: review.id,
           userId: review.userId,
           userImage: review.userImage,
@@ -165,7 +179,6 @@ export default function ViewReviewPage() {
     try {
       const formData = new FormData();
       
-      // Log each field being added
       const fields = [
         { key: 'id', value: id },
         { key: 'userId', value: user?.uid || 'anonymous' },
@@ -177,31 +190,22 @@ export default function ViewReviewPage() {
         { key: 'summary', value: reviewSummary }
       ];
   
-      // Add fields to FormData and log each one
       fields.forEach(field => {
         formData.append(field.key, field.value);
       });
   
-      // // Log files being added
       selectedFiles.slice(0, 2).forEach((file, index) => {
         formData.append('images', file);
       });
-  
-      // // Log entire FormData contents
-      // for (let [key, value] of formData.entries()) {
-      //   console.log(`FormData Entry - ${key}:`, value);
-      // }
   
       const response = await fetch('/api/review-submission', {
         method: 'POST',
         body: formData
       });
   
-      // Log raw response
       console.log('Response status:', response.status);
       const responseJson = await response.json;
   
-      // Try parsing as JSON
       try {
         console.log('Parsed Response:', responseJson);
       } catch (parseError) {
@@ -216,12 +220,13 @@ export default function ViewReviewPage() {
   
       alert('Review submitted successfully!');
       
-      // Fetch and log review list after submission
+      // Fetch and update reviews after submission
       const refreshResponse = await fetch(`/api/reviews-list?id=${id}`);
       const refreshData = await refreshResponse.json();
       
-      console.log('Updated Signed-In Reviews:', refreshData.reviews);
-      console.log('Updated Review Statistics:', {
+      // NEW: Update reviews and stats after submission
+      setReviews(refreshData.reviews);
+      setStats({
         signedInReviewCount: refreshData.signedInReviewCount,
         averageRating: refreshData.averageRating
       });
@@ -412,6 +417,67 @@ export default function ViewReviewPage() {
 
           <button type="submit" className={styles.submitButton}>Submit Review</button>
         </form>
+      )}
+
+      {/* NEW: Reviews List Section */}
+      {stats.signedInReviewCount > 0 && (
+        <div style={{ marginTop: '2rem' }}>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+            Overall Signed Reviews
+          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+            <span style={{ fontSize: '2rem', fontWeight: '700', color: '#000' }}>
+              {stats.averageRating.toFixed(2)}{' '}
+              <span style={{ color: '#FFD700' }}>★★★★★</span>
+            </span>
+          </div>
+
+          <div>
+            {reviews.map((review, idx) => (
+              <div key={`review-${idx}`} style={{ borderBottom: '1px solid #E5E7EB', paddingBottom: '1.5rem' }}>
+                <div style={{ marginBottom: '0.5rem' }}>
+                  <h3 style={{ fontWeight: '600', fontSize: '1rem', marginBottom: '0.25rem' }}>
+                    Review Summary
+                  </h3>
+                  <div style={{ display: 'flex', color: '#FFD700', fontSize: '1.5rem', marginBottom: '0.5rem' }}>
+                    {[...Array(5)].map((_, starIdx) => (
+                      <span
+                        key={`star-${idx}-${starIdx}`}
+                        style={{ color: starIdx < review.ratings ? '#FFD700' : '#D3D3D3' }}
+                      >
+                        ★
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Display images for this review */}
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    {review.images && review.images.length > 0 && review.images.map((image, imageIdx) => (
+                      <img
+                        key={`review-image-${idx}-${imageIdx}`}
+                        src={image} 
+                        alt={`Review image ${imageIdx + 1}`}
+                        style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px' }} 
+                      />
+                    ))}
+                  </div>
+
+                  <p style={{ color: '#1F2937', marginBottom: '1rem' }}>{review.summary}</p>
+                </div>
+
+                {/* Review description below the images */}
+                <p style={{ color: '#4B5563', marginBottom: '1rem' }}>{review.review}</p>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: '#6B7280' }}>
+                  <span key={`userName-${idx}`}>
+                    {review.userName === 'Anonymous User' ? 'Anonymous' : review.userName}
+                  </span>
+                  <span key={`createdAt-${idx}`}>{new Date(review.createdAt).toLocaleDateString()}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );

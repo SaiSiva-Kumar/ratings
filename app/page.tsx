@@ -10,51 +10,16 @@ export default function Home() {
   const [userReviews, setUserReviews] = useState([]);
   const [userReviewStats, setUserReviewStats] = useState(null);
 
-  const fetchUserReviewStats = async (userId: string) => {
-    try {
-      const response = await fetch(`/api/review-stats?userId=${userId}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch user review stats');
-      }
 
-      const stats = await response.json();
-      console.log('User Review Stats:', stats);
-      setUserReviewStats(stats);
-    } catch (error) {
-      console.error("Error fetching user review stats:", error);
-    }
-  };
-
-  const fetchUserReviews = async (userId: string) => {
-    try {
-      const response = await fetch(`/api/review?userId=${userId}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch user reviews');
-      }
-
-      const reviews = await response.json();
-      console.log('User Reviews till now:', reviews);
-      setUserReviews(reviews);
-    } catch (error) {
-      console.error("Error fetching user reviews:", error);
-    }
-  };
 
   const handleGoogleSignIn = async () => {
     try {
       const userCredential = await signInWithPopup(auth, googleProvider);
       const userId = userCredential.user.uid;  
       localStorage.setItem('userId', userId); 
+    
       
-      // Fetch user reviews and stats immediately after sign-in
-      await Promise.all([
-        fetchUserReviews(userId),
-        fetchUserReviewStats(userId)
-      ]);
-      
-      router.push('/createReview');
+      router.push('/user');
     } catch (error) {
       console.error("Google Sign-In Error:", error);
     }

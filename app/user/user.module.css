@@ -1,0 +1,127 @@
+:global(body) {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: white !important;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  color: #000;
+  padding-top: 20px;
+}
+
+.container {
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 32px;
+}
+
+.logo {
+  color: #00A651;
+  font-size: 28px;
+}
+
+.title {
+  margin: 0;
+  font-size: 22px;
+  color: #00A651;
+  font-weight: 600;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  margin-top: 32px;
+}
+
+.createButton {
+  width: 100%;
+  padding: 16px;
+  background-color: #00A651;
+  color: white;
+  border: none;
+  border-radius: 100px;
+  font-size: 16px;
+  font-weight: 500;
+  margin: 16px 0 32px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 166, 81, 0.1);
+}
+
+.reviewCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.cardLeft {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.productImage {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.reviewInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.productName {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.stats {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: #666;
+}
+
+.rating {
+  color: #FFB800;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.reviewCount {
+  color: #666;
+}
+
+.date {
+  font-size: 12px;
+  color: #999;
+}
+
+.shareButton, .addReviewButton {
+  padding: 8px 16px;
+  background-color: transparent;
+  color: #00A651;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 500;
+  text-transform: lowercase;
+}

@@ -12,11 +12,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Review ID is required' }, { status: 400 });
     }
 
-    // Fetch only signed-in (non-anonymous) reviews for the specific review
+    // Fetch all reviews (both signed-in and anonymous) for the specific review
     const reviews = await prisma.review_submission.findMany({
       where: { 
         id,
-        isAnonymous: false // Only retrieve signed-in reviews
       },
       orderBy: { 
         createdAt: 'desc' // Most recent first
@@ -34,7 +33,7 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Count only signed-in reviews
+    // Count only signed-in reviews (non-anonymous)
     const signedInReviewCount = await prisma.review_submission.count({
       where: { 
         id,
