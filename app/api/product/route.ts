@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     });
 
     const reviewUrl = `http://localhost:3000/viewReview?id=${review.id}`;
-    console.log(reviewUrl);
+    console.log(reviewUrl, "are we using this route.ts?");
 
     return NextResponse.json({ reviewUrl }, { status: 201 });
   } catch (error) {
