@@ -90,24 +90,6 @@ export default function ViewReviewPage() {
           signedInReviewCount: data.signedInReviewCount,
           averageRating: data.averageRating
         });
-        
-        // Comprehensive console logging
-        console.log('Total Reviews:', data.reviews.map(review => ({
-          id: review.id,
-          userId: review.userId,
-          userImage: review.userImage,
-          userName: review.userName,
-          ratings: review.ratings,
-          review: review.review,
-          summary: review.summary,
-          images: review.images,
-          createdAt: review.createdAt
-        })));
-    
-        console.log('Review Statistics:', {
-          signedInReviewCount: data.signedInReviewCount,
-          averageRating: data.averageRating
-        });
     
       } catch (err) {
         console.error('Error fetching review list:', err);
