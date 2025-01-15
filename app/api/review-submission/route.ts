@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { supabase } from '../../../supabase/supbaseclient'
 
+
 const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
@@ -72,17 +73,22 @@ export async function POST(request: NextRequest) {
           imageUrls.push(publicUrl);
         }
       }
+
+      const finalId = id as string;
+      const finalUserId = userId as string;
+      const finalReview = review as string;
+      const finalSummary = summary as string;
   
       const reviewSubmission = await prisma.review_submission.create({
         data: {
-          id,
-          userId,
+          id: finalId,
+          userId: finalUserId,
           userName: finalUserName,
           userImage: finalUserImage,
           isAnonymous,
           ratings,
-          review,
-          summary,
+          review: finalReview,
+          summary: finalSummary,
           images: imageUrls,
           createdAt: new Date()
         }
