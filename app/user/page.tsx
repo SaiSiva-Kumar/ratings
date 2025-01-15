@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import styles from './user.module.css';
+import '../styles/global.css';
 
 interface Review {
   ratings: number;

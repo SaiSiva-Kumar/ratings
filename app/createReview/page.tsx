@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import styles from './createReview.module.css';
+import '../styles/global.css';
 import { supabase } from '../../supabase/supbaseclient';
 import { useRouter } from 'next/navigation';
 

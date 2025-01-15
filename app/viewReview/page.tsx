@@ -3,6 +3,7 @@
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState, FormEvent } from 'react';
 import styles from './viewReview.module.css';
+import '../styles/global.css';
 import { auth, googleProvider } from '../../app/firebaseconfig';
 import { signInWithPopup } from "firebase/auth";
 import { createClient } from '@supabase/supabase-js';
