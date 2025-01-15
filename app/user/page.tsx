@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import styles from './user.module.css';
 import '../styles/global.css';
 
@@ -81,9 +82,11 @@ export default function Home() {
         {reviewPages?.map((page) => (
           <div key={page?.reviewPageId} className={styles.reviewCard}>
             <div className={styles.cardLeft}>
-              <img 
+              <Image 
                 src={page?.images?.[0] || '/placeholder.png'} 
-                alt={page?.reviewPageName || 'Review page'}
+                alt={page?.reviewPageName || 'Review page'} 
+                width={100} // Set appropriate dimensions
+                height={100} // Set appropriate dimensions
                 className={styles.productImage}
               />
               <div className={styles.reviewInfo}>
@@ -107,9 +110,11 @@ export default function Home() {
         {userReviews?.map((review, index) => (
           <div key={index} className={styles.reviewCard}>
             <div className={styles.cardLeft}>
-              <img 
+              <Image
                 src={review?.images?.[0] || '/placeholder.png'}
                 alt="Review"
+                width={100} // Set appropriate dimensions
+                height={100} // Set appropriate dimensions
                 className={styles.productImage}
               />
               <div className={styles.reviewInfo}>

@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       for (const file of images) {
         if (file instanceof File && file.size > 0) {
           const fileName = `review images/${id}_${Date.now()}_${file.name}`;
-          const { data, error } = await supabase.storage
+          const { error } = await supabase.storage
             .from('images')
             .upload(fileName, file);
   

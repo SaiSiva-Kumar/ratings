@@ -4,7 +4,7 @@ import prisma from './prismaClient'; // Import Prisma client
 
 const uploadImage = async (file: File) => {
   const filePath = `products/${file.name}`;
-  const { data, error } = await supabase.storage
+  const { error } = await supabase.storage
     .from('product-images')
     .upload(filePath, file);
 

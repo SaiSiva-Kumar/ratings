@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import Image from 'next/image';
 import styles from './createReview.module.css';
 import '../styles/global.css';
 import { supabase } from '../../supabase/supbaseclient';
@@ -29,7 +30,6 @@ export default function ProductForm() {
   });
 
   const [imageUrls, setImageUrls] = useState<string[]>([]);
-  const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFormData(prev => ({
@@ -139,8 +139,13 @@ export default function ProductForm() {
   const isProduct = formData.category === 'product';
 
   const previewImages = imageUrls.map((imageUrl, index) => (
-    <div key={index} className={styles.imagePreview}>
-      <img src={imageUrl} alt={`Image ${index + 1}`} className={styles.previewImage} />
+    <div key={index} className="image-preview">
+      <Image
+        src={imageUrl}
+        alt={`Image ${index + 1}`}
+        width={100} // Replace with appropriate dimensions
+        height={100} // Replace with appropriate dimensions
+      />
     </div>
   ));
 

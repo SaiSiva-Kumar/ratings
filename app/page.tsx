@@ -3,14 +3,9 @@
 import { auth, googleProvider } from "./firebaseconfig";
 import { signInWithPopup } from "firebase/auth";
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
 
 export default function Home() {
   const router = useRouter();
-  const [userReviews, setUserReviews] = useState([]);
-  const [userReviewStats, setUserReviewStats] = useState(null);
-
-
 
   const handleGoogleSignIn = async () => {
     try {

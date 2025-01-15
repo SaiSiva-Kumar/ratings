@@ -5,15 +5,17 @@ import { useEffect, useState, FormEvent } from 'react';
 import styles from './viewReview.module.css';
 import '../styles/global.css';
 import '../styles/reviewglobal.css';
+import Image from 'next/image';
 import { auth, googleProvider } from '../../app/firebaseconfig';
 import { signInWithPopup } from "firebase/auth";
-import { createClient } from '@supabase/supabase-js';
 
 interface Review {
   id: string;
   userId: string;
   category: 'product' | 'service';
   name: string;
+
+
   Description: string;
   images: string[];
   url: string | null;
@@ -39,7 +41,7 @@ export default function ViewReviewPage() {
 
   const [showReviewType, setShowReviewType] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<unknown>(null);
   const [showReviewInput, setShowReviewInput] = useState(false);
 
   const [rating, setRating] = useState(0);
@@ -196,7 +198,7 @@ export default function ViewReviewPage() {
         formData.append(field.key, field.value);
       });
   
-      selectedFiles.slice(0, 2).forEach((file, index) => {
+      selectedFiles.slice(0, 2).forEach((file) => {
         formData.append('images', file);
       });
   
@@ -217,8 +219,6 @@ export default function ViewReviewPage() {
       if (!response.ok) {
         throw new Error(responseJson || 'Failed to submit review');
       }
-  
-      const result = await response.json();
   
       alert('Review submitted successfully!');
       
@@ -258,7 +258,16 @@ export default function ViewReviewPage() {
 
       <div className={styles.imageContainer}>
         {review.images.map((image, index) => (
-          <img key={index} src={image} alt={`Image ${index + 1}`} className={styles.image} />
+            <div key={index} className={styles.imagePreview}>
+              <Image
+                src={image}
+                alt={`Image ${index + 1}`}
+                className={styles.image}
+                width={100} // Adjust width based on your design
+                height={100} // Adjust height based on your design
+                objectFit="cover" // Optional: adjust how the image should be fitted
+              />
+          </div>
         ))}
       </div>
 
@@ -328,19 +337,25 @@ export default function ViewReviewPage() {
         <form onSubmit={handleSubmitReview} className={styles.reviewInputContainer}>
           {user ? (
             <div className={styles.userInfoContainer}>
-              <img 
-                src={user.photoURL || '/default-avatar.png'} 
-                alt={user.displayName || 'User'} 
+              <Image
+                src={user.photoURL || '/default-avatar.png'}
+                alt={user.displayName || 'User'}
                 className={styles.userAvatar}
+                width={50} // Adjust width based on your design
+                height={50} // Adjust height based on your design
+                objectFit="cover" // Optional: adjust how the image should be fitted
               />
-              <span className={styles.userName}>{user.displayName}</span>
+                <span className={styles.userName}>{user.displayName}</span>
             </div>
           ) : selectedOption === 'anonymousReview' && (
             <div className={styles.userInfoContainer}>
-              <img 
-                src="/anonymous-avatar.png" 
-                alt="Anonymous User" 
+              <Image
+                src="/anonymous-avatar.png"
+                alt="Anonymous User"
                 className={styles.userAvatar}
+                width={50} // Adjust width based on your design
+                height={50} // Adjust height based on your design
+                objectFit="cover" // Optional: adjust how the image should be fitted
               />
               <span className={styles.userName}>Anonymous User</span>
             </div>
@@ -400,10 +415,14 @@ export default function ViewReviewPage() {
               <div className={styles.imageContainer}>
                 {previews.map((preview, index) => (
                   <div key={index} className={styles.previewItem}>
-                    <img 
-                      src={preview} 
-                      alt={`Preview ${index + 1}`} 
+                    <Image
+                      key={index} // You can keep the key if you're mapping over images
+                      src={preview}
+                      alt={`Preview ${index + 1}`}
                       className={styles.image}
+                      width={500} // Adjust width based on your design
+                      height={500} // Adjust height based on your design
+                      objectFit="cover" // Optional: adjust how the image should be fitted
                     />
                     <button 
                       className={styles.removePreviewButton}
@@ -455,11 +474,14 @@ export default function ViewReviewPage() {
                   {/* Display images for this review */}
                   <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
                     {review.images && review.images.length > 0 && review.images.map((image, imageIdx) => (
-                      <img
+                      <Image
                         key={`review-image-${idx}-${imageIdx}`}
-                        src={image} 
+                        src={image}
                         alt={`Review image ${imageIdx + 1}`}
-                        style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px' }} 
+                        width={60} // Adjust width based on your design
+                        height={60} // Adjust height based on your design
+                        style={{ borderRadius: '4px' }}
+                        objectFit="cover" // Ensures image fits the container properly
                       />
                     ))}
                   </div>
