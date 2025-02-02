@@ -73,8 +73,8 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    const reviewUrl = `https://rnfrt-49-204-195-169.a.free.pinggy.link/viewReview?id=${review.id}`;
-    console.log(reviewUrl, "are we using this route.ts?");
+    const reviewUrl = `viewReview?id=${review.id}`;
+    console.log(reviewUrl, "relative review URL");
 
     return NextResponse.json({ reviewUrl }, { status: 201 });
   } catch (error) {

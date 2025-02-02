@@ -135,7 +135,7 @@ export default function ProductForm() {
   
       const result = await response.json();
       console.log('Review created:', result);
-      router.push(result.reviewUrl)
+      router.push(`${window.location.origin}/${result.reviewUrl}`)
     } catch (error) {
       console.error('Error creating review:', error);
     }
