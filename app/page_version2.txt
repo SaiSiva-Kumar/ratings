@@ -1,0 +1,145 @@
+"use client";
+
+import React, { useEffect } from 'react';
+import { auth, googleProvider } from "./firebaseconfig";
+import { signInWithPopup } from "firebase/auth";
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+
+export default function Home() {
+  const router = useRouter();
+
+  // Auth check effect (unchanged)
+  useEffect(() => {
+    const userAuthString = localStorage.getItem('userAuth');
+    if (userAuthString) {
+      try {
+        const userAuth = JSON.parse(userAuthString);
+        if (userAuth.uid) router.push('/user');
+      } catch (error) {
+        console.error("Error parsing user auth:", error);
+      }
+    }
+  }, [router]);
+
+  // Google sign-in handler (unchanged)
+  const handleGoogleSignIn = async () => {
+    try {
+      const userCredential = await signInWithPopup(auth, googleProvider);
+      const user = userCredential.user;
+      const sessionStartTime = Date.now();
+      const sessionExpiryTime = sessionStartTime + 2 * 24 * 60 * 60 * 1000;
+
+      // Store comprehensive user information
+      const userAuth = {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+        idToken: await user.getIdToken(), 
+        sessionStartTime: sessionStartTime,
+        sessionExpiryTime: sessionExpiryTime,
+      };
+
+      localStorage.setItem('userAuth', JSON.stringify(userAuth));
+      router.push('/user'); 
+    } catch (error) {
+      console.error("Google Sign-In Error:", error);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-white flex items-center justify-center p-4 md:p-6">
+      <div className="w-full max-w-md md:h-[660px] flex flex-col items-center text-center bg-gradient-to-b from-[#01E969] via-emerald-200 to-emerald-50 rounded-xl p-4 md:p-6 shadow-lg space-y-4 md:space-y-6">
+        
+        {/* Logo Section - Responsive */}
+        <div className="mb-4 md:mb-8 w-full flex justify-center">
+          <div className="w-20 h-20 md:w-24 md:h-24 relative">
+            <Image
+              src="/images/sign-in-logo.png"
+              alt="Swadesic Logo"
+              fill
+              className="object-contain"
+            />
+          </div>
+        </div>
+
+        {/* Title Section - Responsive Typography */}
+        <div className="space-y-2 md:space-y-4">
+          <h1 className="text-2xl md:text-[28px] font-extrabold text-gray-800 leading-tight">
+            Ratings by Swadesic
+          </h1>
+          <p className="text-xs md:text-sm text-gray-800 font-semibold max-w-[280px] md:max-w-none mx-auto">
+            Create your review page or start reviewing in less than a minute.
+          </p>
+        </div>
+
+        {/* Features Grid - Responsive Layout */}
+        <div className="w-full px-2 md:px-4 space-y-6 md:space-y-8 flex-1">
+          {/* Business Section */}
+          <FeatureSection
+            title="For Businesses:"
+            items={[
+              { icon: '📈', text: 'Build credibility with authentic reviews.' },
+              { icon: '🔗', text: 'Share reviews with new customers for easy conversions.' }
+            ]}
+          />
+
+          {/* Consumer Section */}
+          <FeatureSection
+            title="For Consumers:"
+            items={[
+              { icon: '⭐', text: 'Discover trusted reviews for smarter decisions.' },
+              { icon: '📝', text: 'Share your feedback and influence brands.' }
+            ]}
+          />
+        </div>
+
+        {/* Auth Section - Responsive Bottom Spacing */}
+        <div className="w-full space-y-2 md:space-y-3">
+          <GoogleSignInButton onClick={handleGoogleSignIn} />
+          <TermsText />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Reusable Feature Section Component
+const FeatureSection = ({ title, items }) => (
+  <div className="text-left space-y-2 md:space-y-3">
+    <h2 className="text-sm md:text-base font-semibold text-gray-800">{title}</h2>
+    <ul className="space-y-1.5 md:space-y-2">
+      {items.map((item, index) => (
+        <li key={index} className="flex items-center gap-2">
+          <span className="text-lg leading-none">{item.icon}</span>
+          <span className="text-xs md:text-sm font-medium text-gray-800">
+            {item.text}
+          </span>
+        </li>
+      ))}
+    </ul>
+  </div>
+);
+
+// Reusable Google Button Component
+const GoogleSignInButton = ({ onClick }) => (
+  <button
+    onClick={onClick}
+    onTouchStart={(e) => e.preventDefault()}
+    className="w-full bg-[#019141] text-white py-2.5 md:py-3 rounded-full hover:bg-emerald-700 transition-all active:scale-95 text-sm md:text-base font-semibold"
+  >
+    Sign in with Google
+  </button>
+);
+
+// Reusable Terms Text Component
+const TermsText = () => (
+  <p className="text-[10px] md:text-xs text-gray-600 font-medium px-2">
+    By signing in, you agree to{' '}
+    <a href="/terms" className="text-[#01E969] hover:underline">Terms & Policies</a> of{' '}
+    <a href="/about" className="text-[#01E969] hover:underline">
+      Socially X Influencer Centric Private Limited
+    </a>
+  </p>
+);

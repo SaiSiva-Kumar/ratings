@@ -13,13 +13,14 @@ enum Category {
 }
 
 model Create_review {
-  id          String   @id @default(cuid())
-  userId      String
-  category    Category
-  name        String
-  Description String
-  url         String?
-  images      String[]
+  id             String   @id @default(cuid())
+  userId         String
+  category       Category
+  name           String   @db.VarChar(20)
+  Description    String
+  url            String?
+  images         String[]
+  createdDate    DateTime @default(now())
 }
 
 model Review_submission {
@@ -31,7 +32,7 @@ model Review_submission {
   isAnonymous Boolean  @default(false)
   ratings     Int
   review      String
-  summary     String
+  summary     String   @db.VarChar(20)
   images      String[]
   createdAt   DateTime @default(now())
 }

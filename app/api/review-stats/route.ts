@@ -39,11 +39,14 @@ export async function GET(request: Request) {
             const averageSignedInReviews = signedInReviews > 0 
               ? submissions.filter(r => !r.isAnonymous).reduce((acc, r) => acc + r.ratings, 0) / signedInReviews 
               : 0;
-
+              const dateOnly = new Date(reviewPage.createdDate).toISOString().split('T')[0];
+              console.log(dateOnly);
             return {
               reviewPageId: reviewPage.id,
               reviewPageName: reviewPage.name,
               images: reviewPage.images,
+              pageURL: reviewPage.reviewPageURL,  
+              date: dateOnly,
               totalReviews,
               signedInReviews,
               averageSignedInReviews,
@@ -67,6 +70,8 @@ export async function GET(request: Request) {
           review: true,
           images: true,
           createdAt: true,
+          id: true,
+          summary: true
         },
         orderBy: {
           createdAt: 'desc'

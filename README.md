@@ -1,40 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Project Overview
+Ratings by swadesic is a platform that allows users to create review pages for businesses or services, 
+where they can submit reviews. Users can choose whether their reviews are anonymous or signed-in.
 
-## Getting Started
+# Development Guide
+-Build a production ready app with next.js 14.2
+- For images, save storage path and build public urls in the backend
+- Use tailwind css for styling
 
-First, run the development server:
+# Main functinalities and screens
+You need to build front end and backend in the same project.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Home screen (route: /; design_screen: /home-screens)
+-Home screen user need to sign in or sign up with google account.
+-Place the ratings by swadesic logo at the top center of the screen.
+-Below the logo, place the title "Ratings by Swadesic" at middle center of the screen. 
+-Below the title, describe how the app useful for businesses and consumers. 
+-After the description, place the buttons for google sign in and sign up.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Onboarding (route: /onboarding; design_screen: /onboarding)
+-After the gAuth is done, user will be redirected to the onboarding screen.
+-Place the ratings by swadesic logo at the top right right of the screen.   
+-if they are new user, show create review page button. 
+-if they are existing user, show review page and review created by that user. Below the create review page button.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Create review page (route: /createReview; design_screen: /create-review-page)
+-Page contains, category, name, description, image upload, submit button.
+-Category can be either "product" or "service".
+-Name is the name of the product or service.
+-Description is the description of the product or service.
+-Image upload is the image of the product or service.
+-Submit button is the button to submit the review.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-
-
-https://www.kirandev.com/upload-files-to-supabase-storage-nextjs
+## Review page (route: /review/:id; design_screen: /review-page)
+-Page contains, product or service name, description, image, add a review button.
+-add a review button gives sign in or anonymous user option to add a review.
+-if user is signed in, show sign in user name.
+-if user is anonymous, show anonymous user.
+-add ratings stars.
+-add review text.
+-add review summary.
+-add review images.
+-Submit button to submit the review.
+-After the review is submitted, show the review page with the review details.

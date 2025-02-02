@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Create_review" ADD COLUMN     "createdDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ADD COLUMN     "reviewPageURL" TEXT;

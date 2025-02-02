@@ -6,7 +6,9 @@ import Image from 'next/image';
 import styles from './createReview.module.css';
 import '../styles/global.css';
 import { supabase } from '../../supabase/supbaseclient';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams, notFound } from 'next/navigation';
+import { useEffect } from 'react';
+import { ArrowLeft } from 'lucide-react';
 
 interface FormData {
   category: string;
@@ -19,6 +21,18 @@ interface FormData {
 
 export default function ProductForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const origin = searchParams.get('origin');
+    const userAuthString = localStorage.getItem('userAuth');
+    
+    if (origin !== 'userPage' || !userAuthString){
+      notFound();
+    }
+
+  }, [searchParams]);
+  
 
   const [formData, setFormData] = useState<FormData>({
     category: '',
@@ -78,7 +92,12 @@ export default function ProductForm() {
     e.preventDefault();
     
     try {
-      const userId = localStorage.getItem('userId');
+      const userId = localStorage.getItem('userAuth')
+        ? JSON.parse(localStorage.getItem('userAuth')).uid
+        : null;
+      
+      console.log('User ID:', userId);
+
       if (!userId) {
         throw new Error('User not authenticated');
       }
@@ -116,9 +135,7 @@ export default function ProductForm() {
   
       const result = await response.json();
       console.log('Review created:', result);
-      
-      // Redirect to view review page using the reviewUrl from the API
-      router.push(result.reviewUrl);
+      router.push(result.reviewUrl)
     } catch (error) {
       console.error('Error creating review:', error);
     }
@@ -135,133 +152,177 @@ export default function ProductForm() {
     }));
     setImageUrls(updatedPreviewUrls);
   };
-  
+
+  const removeImage = (index: number) => {
+    setFormData(prev => {
+      const newImages = [...prev.images];
+      URL.revokeObjectURL(imageUrls[index]);
+      newImages.splice(index, 1);
+      return { ...prev, images: newImages };
+    });
+    
+    setImageUrls(prev => {
+      const newUrls = [...prev];
+      newUrls.splice(index, 1);
+      return newUrls;
+    });
+  };
+
   const isProduct = formData.category === 'product';
 
   const previewImages = imageUrls.map((imageUrl, index) => (
-    <div key={index} className="image-preview">
+    <div key={index} className="image-preview relative">
       <Image
         src={imageUrl}
         alt={`Image ${index + 1}`}
-        width={100} // Replace with appropriate dimensions
-        height={100} // Replace with appropriate dimensions
+        width={100}
+        height={100}
       />
+      <button 
+        type="button"
+        onClick={() => removeImage(index)}
+        className="absolute top-0 right-0 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold m-1 hover:bg-red-600 transition-colors"
+      >
+        ✕
+      </button>
     </div>
   ));
 
-  return (
-    <div className={styles.formContainer}>
-      <form onSubmit={handleSubmit} className={styles.form}>
-        <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Select Category</label>
-          <select
-            className={styles.formSelect}
-            value={formData.category}
-            onChange={handleCategoryChange}
-          >
-            <option value="">Category</option>
-            <option value="product">Product</option>
-            <option value="service">Service</option>
-          </select>
-        </div>
+  const handleBackClick = () => {
+    router.push('/user');
+  };
 
-        <div className={styles.formGroup}>
-          <label className={styles.formLabel}>
-            {isProduct ? 'Product Name' : 'Service Name'}
-          </label>
-          <input
-            type="text"
-            placeholder={`Enter ${isProduct ? 'product' : 'service'} name`}
-            className={styles.formInput}
-            value={formData.categoryName}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, categoryName: e.target.value }))
-            }
-          />
-        </div>
 
-        <div className={styles.formGroup}>
-          <label className={styles.formLabel}>
-            {isProduct ? 'Product Images' : 'Service Images'} (up to 2) (optional)
-          </label>
-          <button
-            type="button"
-            onClick={() => document.getElementById('file-upload')?.click()}
-            className={styles.uploadButton}
-          >
-            Upload Image
-          </button>
-          <input
-            id="file-upload"
-            type="file"
-            accept="image/*"
-            multiple
-            className={styles.hidden}
-            onChange={handleImageChange}
-          />
-        </div>
-
-        <div className={styles.imagePreviews}>{previewImages}</div>
-
-        <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Description</label>
-          <textarea
-            placeholder="Description"
-            className={styles.formTextarea}
-            value={formData.description}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, description: e.target.value }))
-            }
-          />
-        </div>
-
-        <div className={styles.formGroup}>
-          <label className={styles.formLabel}>
-            Did you list this {isProduct ? 'product' : 'service'} in your Swadesic Store?
-          </label>
-          <div className={styles.radioGroup}>
-            <label className={styles.radioLabel}>
-              <input
-                type="radio"
-                className={styles.radioInput}
-                checked={formData.isListed === true}
-                onChange={() => setFormData((prev) => ({ ...prev, isListed: true }))}
-              />
-              <span>Yes</span>
-            </label>
-            <label className={styles.radioLabel}>
-              <input
-                type="radio"
-                className={styles.radioInput}
-                checked={formData.isListed === false}
-                onChange={() => setFormData((prev) => ({ ...prev, isListed: false }))}
-              />
-              <span>No</span>
-            </label>
-          </div>
-        </div>
-
-        {formData.isListed && (
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}>
-              Swadesic URL of the {isProduct ? 'Product' : 'Service'}
-            </label>
-            <input
-              type="url"
-              placeholder="Enter URL"
-              className={styles.formInput}
-              value={formData.swadesicUrl}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, swadesicUrl: e.target.value }))
-              }
-            />
-          </div>
-        )}
-
-        <button type="submit" className={styles.submitButton}>
-          Submit Review
+return (
+  <div className={styles.formContainer}>
+    <form onSubmit={handleSubmit} className={styles.form}>
+      <div className={styles.formHeader}>
+        <button 
+          className={`${styles.backButton} flex items-center`} 
+          onClick={handleBackClick}
+        >
+          <ArrowLeft className="mr-[0.8rem]" /> 
+          Create Review Page
         </button>
-      </form>
-    </div>
-  );
+      </div>
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>Select Category</label>
+        <select
+          className={styles.formSelect}
+          value={formData.category}
+          onChange={handleCategoryChange}
+        >
+          <option value="">Category</option>
+          <option value="product">Product</option>
+          <option value="service">Service</option>
+        </select>
+      </div>
+
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>
+          {isProduct ? 'Product Name' : 'Service Name'}
+        </label>
+        <input
+          type="text"
+          placeholder={`Enter ${isProduct ? 'product' : 'service'} name`}
+          className={styles.formInput}
+          value={formData.categoryName}
+          maxLength={20}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, categoryName: e.target.value }))
+          }
+        />
+      </div>
+
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>
+          {isProduct ? 'Product Images' : 'Service Images'} (up to 2) (optional)
+        </label>
+        <button
+          type="button"
+          onClick={() => document.getElementById('file-upload')?.click()}
+          className={styles.uploadButton}
+        >
+          Upload Image
+        </button>
+        <input
+          id="file-upload"
+          type="file"
+          accept="image/*"
+          multiple
+          className={styles.hidden}
+          onChange={handleImageChange}
+        />
+      </div>
+
+      <div className={styles.imagePreviews}>{previewImages}</div>
+
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>Description</label>
+        <textarea
+          placeholder="Description"
+          className={styles.formTextarea}
+          value={formData.description}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, description: e.target.value }))
+          }
+        />
+      </div>
+
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>
+          Did you list this {isProduct ? 'product' : 'service'} in your Swadesic Store?
+        </label>
+        <div className={styles.radioGroup}>
+          <label className={styles.radioLabel}>
+            <input
+              type="radio"
+              className={styles.radioInput}
+              checked={formData.isListed === true}
+              onChange={() => setFormData((prev) => ({ ...prev, isListed: true }))}
+            />
+            <span>Yes</span>
+          </label>
+          <label className={styles.radioLabel}>
+            <input
+              type="radio"
+              className={styles.radioInput}
+              checked={formData.isListed === false}
+              onChange={() => setFormData((prev) => ({ ...prev, isListed: false }))}
+            />
+            <span>No</span>
+          </label>
+        </div>
+      </div>
+
+      {formData.isListed && (
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>
+            Swadesic URL of the {isProduct ? 'Product' : 'Service'}
+          </label>
+          <input
+            type="url"
+            placeholder="Enter URL"
+            className={styles.formInput}
+            value={formData.swadesicUrl}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, swadesicUrl: e.target.value }))
+            }
+          />
+        </div>
+      )}
+
+      <div className={styles.formGroup}>
+        <button 
+          type="submit" 
+          className={`${styles.submitButton} ${(!formData.category || !formData.categoryName) ? 'opacity-50 cursor-not-allowed' : ''}`}
+          disabled={!formData.category || !formData.categoryName}
+        >
+          Create Review Page
+        </button>
+      </div>
+    </form>
+  </div>
+);
+
 }

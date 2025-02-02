@@ -4,18 +4,21 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useState, FormEvent } from 'react';
 import styles from './viewReview.module.css';
 import '../styles/global.css';
-import '../styles/reviewglobal.css';
+// import '../styles/reviewglobal.css';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { auth, googleProvider } from '../../app/firebaseconfig';
 import { signInWithPopup } from "firebase/auth";
+import ReviewTypeSelector from '../button/page';
+import ReviewForm from '../reviewForm/page';
+import ReviewSelectionUI from '../example/page';
+import { ArrowLeft } from 'lucide-react';
 
 interface Review {
   id: string;
   userId: string;
   category: 'product' | 'service';
   name: string;
-
-
   Description: string;
   images: string[];
   url: string | null;
@@ -33,16 +36,22 @@ interface ReviewSubmission {
   createdAt: string;
 }
 
-export default function ViewReviewPage() {
+export default function ViewReviewPage({ 
+  initialId, 
+  onAddReviewClick, 
+  onReviewTypeSelect 
+}: { 
+  initialId?: string | null, 
+  onAddReviewClick?: () => void, 
+  onReviewTypeSelect?: (type: 'signed' | 'anonymous') => void 
+} = {}) {
   const searchParams = useSearchParams();
-  const id = searchParams.get('id');
+  const id = initialId || searchParams.get('id');
   const [review, setReview] = useState<Review | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const [showReviewType, setShowReviewType] = useState(false);
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [user, setUser] = useState<unknown>(null);
   const [showReviewInput, setShowReviewInput] = useState(false);
+  const [user, setUser] = useState<unknown>(null);
 
   const [rating, setRating] = useState(0);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]); 
@@ -57,6 +66,57 @@ export default function ViewReviewPage() {
     signedInReviewCount: 0,
     averageRating: 0
   });
+
+  const [showReviewTypePopup, setShowReviewTypePopup] = useState(false);
+  const [selectedReviewType, setSelectedReviewType] = useState<'signed' | 'anonymous' | null>(null);
+
+  const [selectedImage, setSelectedImage] = useState<{ url: string, type: Review['category'] } | null>(null);
+
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+
+  const handleReviewTypeSelect = (type: 'signed' | 'anonymous') => {
+    if (onReviewTypeSelect) {
+      onReviewTypeSelect(type);
+    } else {
+      setSelectedReviewType(type);
+      setShowReviewTypePopup(false);
+    }
+  };
+
+  const handleAddReviewClick = () => {
+    if (onAddReviewClick) {
+      onAddReviewClick();
+    } else {
+      setShowReviewTypePopup(true);
+    }
+  };
+
+  const handleCloseReviewForm = () => {
+    setShowReviewInput(false);
+    setSelectedReviewType(null);
+  };
+
+  const fetchReviewList = async () => {
+    if (!id) return;
+  
+    try {
+      const response = await fetch(`/api/reviews-list?id=${id}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch review list');
+      }
+      const data = await response.json();
+      
+      // Update reviews and stats state
+      setReviews(data.reviews);
+      setStats({
+        signedInReviewCount: data.signedInReviewCount,
+        averageRating: data.averageRating
+      });
+  
+    } catch (err) {
+      console.error('Error fetching review list:', err);
+    }
+  };
 
   useEffect(() => {
     const fetchReview = async () => {
@@ -74,39 +134,9 @@ export default function ViewReviewPage() {
       }
     };
 
-    const fetchReviewList = async () => {
-      if (!id) return;
-    
-      try {
-        const response = await fetch(`/api/reviews-list?id=${id}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch review list');
-        }
-        const data = await response.json();
-        
-        // NEW: Update reviews and stats state
-        setReviews(data.reviews);
-        setStats({
-          signedInReviewCount: data.signedInReviewCount,
-          averageRating: data.averageRating
-        });
-    
-      } catch (err) {
-        console.error('Error fetching review list:', err);
-      }
-    };
-
     fetchReview();
     fetchReviewList();
   }, [id]);
-
-  const handleAddReviewClick = () => {
-    setShowReviewType(true);
-  };
-
-  const handleOptionChange = (option: string) => {
-    setSelectedOption(option);
-  };
 
   const handleSignedReviewSignIn = async () => {
     try {
@@ -170,7 +200,7 @@ export default function ViewReviewPage() {
         { key: 'userId', value: user?.uid || 'anonymous' },
         { key: 'userName', value: user?.displayName || 'Anonymous User' },
         { key: 'userImage', value: user?.photoURL || '/anonymous-avatar.png' },
-        { key: 'isAnonymous', value: (selectedOption === 'anonymousReview').toString() },
+        { key: 'isAnonymous', value: (user === null).toString() },
         { key: 'ratings', value: rating.toString() },
         { key: 'review', value: reviewText },
         { key: 'summary', value: reviewSummary }
@@ -208,7 +238,7 @@ export default function ViewReviewPage() {
       const refreshResponse = await fetch(`/api/reviews-list?id=${id}`);
       const refreshData = await refreshResponse.json();
       
-      // NEW: Update reviews and stats after submission
+      // Update reviews and stats after submission
       setReviews(refreshData.reviews);
       setStats({
         signedInReviewCount: refreshData.signedInReviewCount,
@@ -221,7 +251,6 @@ export default function ViewReviewPage() {
       setSelectedFiles([]);
       setPreviews([]);
       setShowReviewInput(false);
-      setShowReviewType(false);
       setError(null);
     } catch (error) {
       console.error('Full submit review error:', error);
@@ -229,259 +258,275 @@ export default function ViewReviewPage() {
     }
   };
 
+  const handleImageClick = (imageUrl: string, category: Review['category']) => {
+    setSelectedImage({ url: imageUrl, type: category });
+  };
+
+  const closeImageModal = () => {
+    setSelectedImage(null);
+  };
+
+  const router = useRouter();
+  const handleBackClick = () => {
+    const userAuth = localStorage.getItem('userAuth');
+    
+    if (!userAuth) {
+      router.push('/user');
+    } else {
+      router.push('/');
+    }
+    
+  };
+
+  // Helper function to render dynamic stars based on average rating
+  const renderDynamicStars = (averageRating: number) => {
+    const fullStars = Math.floor(averageRating);
+    const emptyStars = 5 - fullStars;
+    
+    return (
+      <div style={{ display: 'flex', gap: '8px' }}>
+        {[...Array(fullStars)].map((_, index) => (
+          <Image 
+            key={`full-star-${index}`} 
+            src="/images/Vector.png" 
+            alt="Filled Star" 
+            width={22.83} 
+            height={21.8} 
+          />
+        ))}
+        
+        {[...Array(emptyStars)].map((_, index) => (
+          <Image 
+            key={`empty-star-${index}`} 
+            src="/images/Vector_2.png" 
+            alt="Unfilled Star" 
+            width={22.83} 
+            height={21.8} 
+          />
+        ))}
+      </div>
+    );
+  };
+
+  // Modify star rendering for interactive star selection
+  const renderInteractiveStars = () => {
+    return (
+      <div className={styles.starsContainer}>
+        {[1, 2, 3, 4, 5].map((starValue) => (
+          <Image 
+            key={starValue}
+            src={starValue <= rating ? "/images/Vector.png" : "/images/Vector_2.png"}
+            alt={starValue <= rating ? "Filled Star" : "Unfilled Star"}
+            width={22.83}
+            height={21.8}
+            onClick={() => handleStarClick(starValue)}
+            style={{ cursor: 'pointer' }}
+          />
+        ))}
+      </div>
+    );
+  };
+
+  // Helper function to truncate description to 15 words
+  const truncateDescription = (text: string, wordLimit: number = 15) => {
+    const words = text.split(/\s+/);
+    if (words.length <= wordLimit) return text;
+    return words.slice(0, wordLimit).join(' ') + '...';
+  };
+
+  // Render description with view more functionality
+  const renderDescription = () => {
+    const description = review.Description;
+    
+    if (description.split(/\s+/).length <= 15) {
+      return <p className={styles.description}>{description}</p>;
+    }
+
+    return (
+      <p className={styles.description}>
+        {isDescriptionExpanded ? description : truncateDescription(description)}
+        {!isDescriptionExpanded && (
+          <button 
+            onClick={() => setIsDescriptionExpanded(true)}
+            className={styles.viewMoreButton}
+          >
+            view more
+          </button>
+        )}
+        {isDescriptionExpanded && (
+          <button 
+            onClick={() => setIsDescriptionExpanded(false)}
+            className={styles.viewMoreButton}
+          >
+            view less
+          </button>
+        )}
+      </p>
+    );
+  };
+
   if (error) return <div className={styles.error}>Error: {error}</div>;
   if (!review) return <div className={styles.loading}>Loading...</div>;
 
   return (
     <div className={styles.container}>
-      <button className={styles.backButton}>
-        &larr; {review.category === 'product' ? 'Product Review' : 'Service Review'}
+      <button 
+        className={`${styles.backButton} flex items-center`} 
+        onClick={handleBackClick}
+      >
+        <ArrowLeft className="mr-[0.8rem]" /> 
+        {review.category === 'product' ? 'Product Review' : 'Service Review'}
       </button>
 
-      <div className={styles.imageContainer}>
-        {review.images.map((image, index) => (
+      <div className={`${styles.imageContainer} mt-4`}>
+        {review.images.map((imageUrl, index) => (
             <div key={index} className={styles.imagePreview}>
               <Image
-                src={image}
-                alt={`Image ${index + 1}`}
-                className={styles.image}
+                src={imageUrl}
+                alt={`${review.category} Image ${index + 1}`}
+                className={styles.clickableImage}
                 width={100} // Adjust width based on your design
                 height={100} // Adjust height based on your design
                 objectFit="cover" // Optional: adjust how the image should be fitted
+                onClick={() => handleImageClick(imageUrl, review.category)}
               />
           </div>
         ))}
       </div>
 
       <h2 className={styles.title}>{review.name}</h2>
-      <p className={styles.description}>{review.Description}</p>
+      {renderDescription()}
 
-      {!showReviewType && !showReviewInput && (
-        <button className={styles.addReviewButton} onClick={handleAddReviewClick}>
+      {!showReviewInput && (
+        <button 
+          className={styles.addReviewButton} 
+          onClick={handleAddReviewClick}
+        >
           Add a Review
         </button>
       )}
 
-      {showReviewType && !showReviewInput && (
-        <div className={styles.reviewTypeContainer}>
-          <div className={styles.reviewOption}>
-            <label>
-              <input
-                type="radio"
-                name="reviewType"
-                value="signedReview"
-                onChange={() => handleOptionChange('signedReview')}
-              />
-              <strong>Add a Signed Review</strong>
-              <p>
-                Make your review count! Appear first, influence overall ratings, and enjoy the
-                freedom to edit or delete anytime. Choose authenticity!
-              </p>
-            </label>
-          </div>
+      {/* Review Type Selector Popup */}
+      <ReviewSelectionUI 
+        isOpen={showReviewTypePopup}
+        onClose={() => setShowReviewTypePopup(false)}
+        productId={id || ''}
+      />
 
-          <div className={styles.reviewOption}>
-            <label>
-              <input
-                type="radio"
-                name="reviewType"
-                value="anonymousReview"
-                onChange={() => handleOptionChange('anonymousReview')}
-              />
-              <strong>Add an Anonymous Review</strong>
-              <p>
-              Skip sign-up, but your review appears after Signed review. Doesn&apos;t impact overall
-              ratings, and can&apos;t be edited.
-              </p>
-            </label>
-          </div>
-
-          {selectedOption === 'signedReview' && (
-            <button 
-              className={styles.signedReviewButton} 
-              onClick={handleSignedReviewSignIn}
-            >
-              Sign Up & Review
-            </button>
-          )}
-          {selectedOption === 'anonymousReview' && (
-            <button 
-              className={styles.anonymousReviewButton}
-              onClick={() => setShowReviewInput(true)}
-            >
-              Skip Sign-Up & Review
-            </button>
-          )}
-        </div>
+      {/* Review Form - Conditionally Rendered */}
+      {selectedReviewType && id && (
+        <ReviewForm 
+          onClose={handleCloseReviewForm}
+          reviewType={selectedReviewType}
+          productId={id}
+          onSubmitSuccess={() => {
+            // Optional: Refresh reviews or perform post-submission actions
+            fetchReviewList();
+          }}
+        />
       )}
 
-      {showReviewInput && (
-        <form onSubmit={handleSubmitReview} className={styles.reviewInputContainer}>
-          {user ? (
-            <div className={styles.userInfoContainer}>
-              <Image
-                src={user.photoURL || '/default-avatar.png'}
-                alt={user.displayName || 'User'}
-                className={styles.userAvatar}
-                width={50} // Adjust width based on your design
-                height={50} // Adjust height based on your design
-                objectFit="cover" // Optional: adjust how the image should be fitted
-              />
-                <span className={styles.userName}>{user.displayName}</span>
-            </div>
-          ) : selectedOption === 'anonymousReview' && (
-            <div className={styles.userInfoContainer}>
-              <Image
-                src="/anonymous-avatar.png"
-                alt="Anonymous User"
-                className={styles.userAvatar}
-                width={50} // Adjust width based on your design
-                height={50} // Adjust height based on your design
-                objectFit="cover" // Optional: adjust how the image should be fitted
-              />
-              <span className={styles.userName}>Anonymous User</span>
-            </div>
-          )}
-
-          <div className={styles.starRating}>
-            <p>Ratings</p>
-            <div className={styles.starsContainer}>
-              {[...Array(5)].map((_, index) => (
-                <span
-                  key={index}
-                  className={`${styles.star} ${index < rating ? styles.filled : ''}`}
-                  onClick={() => handleStarClick(index + 1)}
-                >
-                  &#9733;
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <p>Review in Detail</p>
-          <textarea
-            placeholder="Write a detailed review"
-            className={styles.detailedReview}
-            value={reviewText}
-            onChange={(e) => setReviewText(e.target.value)}
-            required
-          ></textarea>
-
-          <p>Review Summary</p>
-          <input
-            type="text"
-            placeholder="Summarize your review as Review Title"
-            className={styles.reviewSummary}
-            value={reviewSummary}
-            onChange={(e) => setReviewSummary(e.target.value)}
-            required
-          />
-
-          <div className={styles.uploadSection}>
-            <label htmlFor="upload" className={styles.uploadLabel}>
-              Upload Images
-            </label>
-            <input 
-              type="file" 
-              id="upload" 
-              accept="image/*" 
-              multiple 
-              className={styles.uploadInput} 
-              onChange={handleFileChange}
-            />
-            <label htmlFor="upload" className={styles.uploadButton}>
-              Choose Files
-            </label>
-
-            {previews.length > 0 && (
-              <div className={styles.imageContainer}>
-                {previews.map((preview, index) => (
-                  <div key={index} className={styles.previewItem}>
-                    <Image
-                      key={index} // You can keep the key if you're mapping over images
-                      src={preview}
-                      alt={`Preview ${index + 1}`}
-                      className={styles.image}
-                      width={500} // Adjust width based on your design
-                      height={500} // Adjust height based on your design
-                      objectFit="cover" // Optional: adjust how the image should be fitted
-                    />
-                    <button 
-                      className={styles.removePreviewButton}
-                      onClick={() => removePreview(index)}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <button type="submit" className={styles.submitButton}>Submit Review</button>
-        </form>
-      )}
-
-      {/* NEW: Reviews List Section */}
+      {/* Existing review list and details */}
       {stats.signedInReviewCount > 0 && (
         <div style={{ marginTop: '2rem' }}>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem', fontFamily: 'Roboto, sans-serif' }}>
             Overall Signed Reviews
           </h3>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-            <span style={{ fontSize: '2rem', fontWeight: '700', color: '#000' }}>
-              {stats.averageRating.toFixed(2)}{' '}
-              <span style={{ color: '#FFD700' }}>★★★★★</span>
+            <span style={{ fontSize: '2rem', fontWeight: '700', color: '#000', fontFamily: 'Roboto, sans-serif' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>{stats.averageRating.toFixed(1)}</span>
+                {renderDynamicStars(stats.averageRating)}
+              </div>
             </span>
           </div>
 
           <div>
-            {reviews.map((review, idx) => (
-              <div key={`review-${idx}`} style={{ borderBottom: '1px solid #E5E7EB', paddingBottom: '1.5rem' }}>
-                <div style={{ marginBottom: '0.5rem' }}>
-                  <h3 style={{ fontWeight: '600', fontSize: '1rem', marginBottom: '0.25rem' }}>
-                    Review Summary
-                  </h3>
-                  <div style={{ display: 'flex', color: '#FFD700', fontSize: '1.5rem', marginBottom: '0.5rem' }}>
-                    {[...Array(5)].map((_, starIdx) => (
-                      <span
-                        key={`star-${idx}-${starIdx}`}
-                        style={{ color: starIdx < review.ratings ? '#FFD700' : '#D3D3D3' }}
-                      >
-                        ★
-                      </span>
-                    ))}
-                  </div>
+            {reviews.map((review) => (
+              <div key={review.id} style={{ paddingBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                  <div style={{ width: '100%' }}>
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <h3 style={{ 
+                        fontSize: '1rem', 
+                        fontWeight: '600', 
+                        color: '#1F2937', 
+                        margin: 0,
+                        marginBottom: '0.5rem',
+                        fontFamily: 'Roboto, sans-serif',
+                        marginTop:'20px'
+                      }}>
+                        {review.summary}
+                      </h3>
+                      
+                      {/* Stars moved below summary */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.5rem' }}>
+                        {[...Array(review.ratings)].map((_, starIdx) => (
+                          <Image 
+                            key={`filled-star-${starIdx}`} 
+                            src="/images/Vector.png" 
+                            alt="Filled Star" 
+                            width={22.83} 
+                            height={21.8} 
+                          />
+                        ))}
+                        {[...Array(5 - review.ratings)].map((_, starIdx) => (
+                          <Image 
+                            key={`empty-star-${starIdx}`} 
+                            src="/images/Vector_2.png" 
+                            alt="Unfilled Star" 
+                            width={22.83} 
+                            height={21.8} 
+                          />
+                        ))}
+                      </div>
+                    </div>
 
-                  {/* Display images for this review */}
-                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                    {review.images && review.images.length > 0 && review.images.map((image, imageIdx) => (
-                      <Image
-                        key={`review-image-${idx}-${imageIdx}`}
-                        src={image}
-                        alt={`Review image ${imageIdx + 1}`}
-                        width={60} // Adjust width based on your design
-                        height={60} // Adjust height based on your design
-                        style={{ borderRadius: '4px' }}
-                        objectFit="cover" // Ensures image fits the container properly
-                      />
-                    ))}
+                    {/* Display images for this review */}
+                    <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                      {review.images && review.images.length > 0 && review.images.map((imageUrl, imageIdx) => (
+                        <Image
+                          key={`review-image-${review.id}-${imageIdx}`}
+                          src={imageUrl}
+                          alt={`Review image ${imageIdx + 1}`}
+                          width={50}
+                          height={50}
+                          style={{ borderRadius: '4px' }}
+                          objectFit="cover"
+                          onClick={() => handleImageClick(imageUrl, review.category)}
+                          className={styles.clickableImage}
+                        />
+                      ))}
+                    </div>
                   </div>
-
-                  <p style={{ color: '#1F2937', marginBottom: '1rem' }}>{review.summary}</p>
                 </div>
 
-                {/* Review description below the images */}
-                <p style={{ color: '#4B5563', marginBottom: '1rem' }}>{review.review}</p>
+                {/* Single review text */}
+                <p style={{ color: '#000000', marginBottom: '1rem', fontFamily: 'Roboto, sans-serif' }}>{review.review}</p>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: '#6B7280' }}>
-                  <span key={`userName-${idx}`}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: '#000000',fontWeight: '600' , fontFamily: 'Roboto, sans-serif' }}>
+                  <span key={`userName-${review.id}`}>
                     {review.userName === 'Anonymous User' ? 'Anonymous' : review.userName}
                   </span>
-                  <span key={`createdAt-${idx}`}>{new Date(review.createdAt).toLocaleDateString()}</span>
+                  <span key={`createdAt-${review.id}`}>{new Date(review.createdAt).toLocaleDateString()}</span>
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+      {selectedImage && (
+        <div className={styles.imageModal} onClick={closeImageModal}>
+          <div className={styles.imageModalContent} onClick={(e) => e.stopPropagation()}>
+            <span className={styles.closeModal} onClick={closeImageModal}>&times;</span>
+            <Image 
+              src={selectedImage.url} 
+              alt={`${selectedImage.type} image`} 
+              layout="responsive" 
+              width={1000} 
+              height={1000} 
+              className={styles.modalImage}
+            />
           </div>
         </div>
       )}

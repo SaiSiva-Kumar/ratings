@@ -49,22 +49,22 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-0">
-      <div className="w-[375px] max-w-[375px] h-[812px] top-[-1688px] flex flex-col items-center text-center bg-gradient-to-b from-[#01E969] via-emerald-200 to-emerald-50 rounded-xl p-6 shadow-lg">
+    <div className="min-h-screen bg-white flex items-center justify-center p-6">
+      <div className="w-full max-w-md h-[660px] flex flex-col items-center text-center bg-gradient-to-b from-[#01E969] via-emerald-200 to-emerald-50 rounded-xl p-6 shadow-lg">
         {/* Simplified Star Logo */}
-        <div className="relative w-[118px] h-[118px] mb-8">
+        <div className="relative w-24 h-24 mb-8">
           <Image
             src="/images/sign-in-logo.png"  // Replace with your logo's path
             alt="Logo"
             width={118}   // Width in pixels
             height={118}  // Height in pixels
-            className="absolute object-contain"
+            className="absolute"
           />
         </div>
         
         {/* Main Title */}
         <h1 className="text-[28.29px] font-extrabold mb-2 text-gray-800 font:Noto Sans h-[21px] leading-[20.52px">Ratings by Swadesic</h1>
-        <p className="text-[12px] leading-[17px] text-[#000000] mt-6 mb-14 font-semibold font-roboto whitespace-nowrap overflow-hidden text-ellipsis">Create your review page or start reviewing in less than a minutes.</p>
+        <p className="text-[12px] leading-[17px] text-[#000000] mt-6 mb-14 font-semibold" style={{ fontFamily: 'Roboto, sans-serif', fontWeight: 600 }}>Create your review page or start reviewing in less than a minutes.</p>
         
         {/* Business Section */}
         <div className="flex justify-center items-center w-full px-4">

@@ -6,4 +6,15 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+}
+
+@media screen and (max-width: 768px) {
+    body {
+      display: block;
+      justify-content: initial;
+      align-items: initial;
+      min-height: auto;
+      margin: 0;
+      padding: 0;
+    }
   }

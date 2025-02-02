@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { createId } from '@paralleldrive/cuid2';
 
 const prisma = new PrismaClient();
 
@@ -46,6 +47,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
+    const reviewId = createId();
     
     if (!data || !data.userId || !data.category || !data.name) {
       return NextResponse.json({ 
@@ -61,16 +63,17 @@ export async function POST(request: NextRequest) {
 
     const review = await prisma.create_review.create({
       data: {
+        id: reviewId,
         userId: data.userId,
         category: data.category,
         name: data.name,
         Description: data.description,
         url: data.url || null,
-        images: data.images || []
+        images: data.images || [],
       }
     });
 
-    const reviewUrl = `https://ratings-local.vercel.app//viewReview?id=${review.id}`;
+    const reviewUrl = `https://rnfrt-49-204-195-169.a.free.pinggy.link/viewReview?id=${review.id}`;
     console.log(reviewUrl, "are we using this route.ts?");
 
     return NextResponse.json({ reviewUrl }, { status: 201 });
