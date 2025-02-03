@@ -74,9 +74,10 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validation checks
     if (rating === 0) {
       alert('Please provide a rating');
       return;
@@ -101,21 +102,46 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
       formData.append('summary', summary);
       formData.append('reviewType', reviewType);
 
-      if (reviewType === 'signed') {
-        const user = JSON.parse(localStorage.getItem('userAuth'));
-        formData.append('userId', user.uid);
-        formData.append('userName', user.displayName);
-        formData.append('userImage', user.photoURL);
+      // User Authentication and ID Logic
+      const userAuth = localStorage.getItem('userAuth');
+      let userId, userName, userImage;
+
+      if (userAuth) {
+        // Signed-in user
+        const user = JSON.parse(userAuth);
+        
+        if (reviewType === 'signed') {
+          // Regular signed review
+          userId = user.uid;
+          userName = user.displayName;
+          userImage = user.photoURL;
+        } else {
+          // Signed-in user choosing anonymous review
+          // Use the same uid, but mark as anonymous
+          userId = user.uid;
+          console.log(userId)
+          userName = 'Anonymous User';
+          userImage = '/public/images/anonymous-avatar.png';
+        }
       } else {
-        formData.append('userId', 'anonymous');
-        formData.append('userName', 'Anonymous User');
-        formData.append('userImage', '/public/images/anonymous-avatar.png');
+        // Completely new anonymous user
+        userId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        userName = 'Anonymous User';
+        userImage = '/public/images/anonymous-avatar.png';
       }
 
+      // Append user details to form data
+      formData.append('userId', userId);
+      formData.append('userName', userName);
+      formData.append('userImage', userImage);
+      formData.append('isAnonymous', (reviewType === 'anonymous').toString());
+
+      // Image Handling
       images.slice(0, 2).forEach((imageObj) => {
         formData.append('images', imageObj.file);
       });
 
+      // API Submission
       const response = await fetch('/api/review-submission', {
         method: 'POST',
         body: formData

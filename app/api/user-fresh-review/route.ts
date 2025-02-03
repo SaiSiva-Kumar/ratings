@@ -8,20 +8,36 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url);
     const productId = url.searchParams.get('productId');
     const userId = url.searchParams.get('userId');
+    const reviewType = url.searchParams.get('reviewType') || 'signed';
 
-    console.log('Fetching user review:', { productId, userId });
+    console.log('Fetching user review:', { 
+      productId, 
+      userId, 
+      reviewType
+    });
 
-    if (!productId || !userId) {
+    if (!productId) {
       return NextResponse.json({ 
-        error: 'Product ID and User ID are required' 
+        error: 'Product ID is required' 
       }, { status: 400 });
     }
 
+    // Prepare query conditions based on review type
+    const queryConditions = reviewType === 'signed' 
+      ? { 
+          id: productId,
+          userId: userId,
+          // Exclude anonymous user IDs for signed reviews
+          NOT: { userId: { contains: '_' } }
+        }
+      : { 
+          id: productId,
+          // For anonymous reviews, userId must contain '_'
+          userId: { contains: '_' }
+        };
+
     const userReview = await prisma.review_submission.findFirst({
-      where: { 
-        id: productId,  // product ID
-        userId: userId 
-      },
+      where: queryConditions,
       orderBy: { createdAt: 'desc' }, // Most recent first
       select: {
         id: true,
@@ -32,8 +48,7 @@ export async function GET(request: NextRequest) {
         review: true,
         summary: true,
         images: true,
-        createdAt: true,
-        isAnonymous: true
+        createdAt: true
       }
     });
 
@@ -41,7 +56,7 @@ export async function GET(request: NextRequest) {
 
     if (!userReview) {
       return NextResponse.json({ 
-        error: 'No review found for this product and user' 
+        error: 'No review found for this product and user type' 
       }, { status: 404 });
     }
 

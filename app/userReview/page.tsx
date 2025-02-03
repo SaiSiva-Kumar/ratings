@@ -78,24 +78,33 @@ export default function UserReviewPage() {
 
   const handleReviewSubmitSuccess = async () => {
     try {
-      // Get user info from localStorage for signed reviews
       const user = reviewType === 'signed' 
         ? JSON.parse(localStorage.getItem('userAuth')) 
         : null;
 
-      console.log(user, id)
+    
 
-      if (user && id) {
-        const response = await fetch(`/api/user-fresh-review?productId=${id}&userId=${user.uid}`);
+      if (id) {
+        const queryParams = new URLSearchParams({
+          productId: id,
+          reviewType: reviewType || 'anonymous',
+          ...(user ? { userId: user.uid } : {})
+        });
+
+        const response = await fetch(`/api/user-fresh-review?${queryParams.toString()}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch review');
+        }
+        
         const reviewData = await response.json();
-
         setUserReview(reviewData);
       }
 
-      // Close the review form
       setShowReviewForm(false);
     } catch (error) {
       console.error('Error fetching user review:', error);
+      alert('Could not retrieve your review. Please try again.');
     }
   };
 
