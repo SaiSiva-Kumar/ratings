@@ -94,6 +94,8 @@ export async function POST(request: NextRequest) {
         }
       });
 
+      console.log("uploaded completed");
+
       return NextResponse.json({ 
         message: 'Review submitted successfully',
         reviewSubmission 

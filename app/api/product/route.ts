@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     });
 
     const reviewUrl = `viewReview?id=${review.id}`;
-    console.log(reviewUrl, "relative review URL");
+    console.log("uploaded completed");
 
     return NextResponse.json({ reviewUrl }, { status: 201 });
   } catch (error) {

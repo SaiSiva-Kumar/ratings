@@ -28,12 +28,12 @@ export async function GET(request: NextRequest) {
           id: productId,
           userId: userId,
           // Exclude anonymous user IDs for signed reviews
-          NOT: { userId: { contains: '_' } }
+          isAnonymous: false
         }
       : { 
           id: productId,
           // For anonymous reviews, userId must contain '_'
-          userId: { contains: '_' }
+          isAnonymous: true
         };
 
     const userReview = await prisma.review_submission.findFirst({

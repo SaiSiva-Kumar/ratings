@@ -23,6 +23,8 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
   const [summary, setSummary] = useState('');
   const [images, setImages] = useState([]);
   const [imageError, setImageError] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [imageValidationErrors, setImageValidationErrors] = useState<string[]>([]);
   const fileInputRef = useRef(null);
   const [userInfo, setUserInfo] = useState({
     name: reviewType === 'anonymous' ? 'Anonymous user' : '',
@@ -49,15 +51,46 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
     setRating(prev => prev === index + 1 ? index : index + 1);
   };
 
+  const validateImages = (files: File[]) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const validationErrors: string[] = [];
+
+    const validFiles = files.filter((file, index) => {
+      // Type validation
+      if (!allowedTypes.includes(file.type)) {
+        validationErrors.push(`Invalid file type for ${file.name}. Only JPEG, PNG, and WebP are allowed.`);
+        return false;
+      }
+
+      // Size validation
+      if (file.size > maxSize) {
+        validationErrors.push(`${file.name} exceeds 5MB size limit.`);
+        return false;
+      }
+
+      return true;
+    });
+
+    setImageValidationErrors(validationErrors);
+    return validFiles;
+  };
+
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     
-    if (images.length + files.length > 2) {
+    // Reset previous validation errors
+    setImageValidationErrors([]);
+
+    // Validate files
+    const validFiles = validateImages(files);
+
+    if (images.length + validFiles.length > 2) {
       alert('Maximum 2 images allowed');
       return;
     }
 
-    const newImages = files.map(file => ({
+    const newImages = validFiles.map(file => ({
       file,
       preview: URL.createObjectURL(file)
     }));
@@ -93,6 +126,12 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
       return;
     }
 
+    // Show any image validation errors
+    if (imageValidationErrors.length > 0) {
+      imageValidationErrors.forEach(error => alert(error));
+      return;
+    }
+
     try {
       const formData = new FormData();
       
@@ -107,24 +146,18 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
       let userId, userName, userImage;
 
       if (userAuth) {
-        // Signed-in user
         const user = JSON.parse(userAuth);
         
         if (reviewType === 'signed') {
-          // Regular signed review
           userId = user.uid;
           userName = user.displayName;
           userImage = user.photoURL;
         } else {
-          // Signed-in user choosing anonymous review
-          // Use the same uid, but mark as anonymous
           userId = user.uid;
-          console.log(userId)
           userName = 'Anonymous User';
           userImage = '/public/images/anonymous-avatar.png';
         }
       } else {
-        // Completely new anonymous user
         userId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         userName = 'Anonymous User';
         userImage = '/public/images/anonymous-avatar.png';
@@ -136,10 +169,30 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
       formData.append('userImage', userImage);
       formData.append('isAnonymous', (reviewType === 'anonymous').toString());
 
-      // Image Handling
-      images.slice(0, 2).forEach((imageObj) => {
-        formData.append('images', imageObj.file);
+      // Parallel image upload preparation
+      const imageUploadPromises = images.slice(0, 2).map((imageObj, index) => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            // Update progress
+            setUploadProgress(Math.round(((index + 1) / images.length) * 100));
+            resolve(imageObj.file);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(imageObj.file);
+        });
       });
+
+      // Wait for all image uploads to complete
+      const uploadedImages = await Promise.all(imageUploadPromises);
+
+      // Append images to form data
+      uploadedImages.forEach((file) => {
+        formData.append('images', file);
+      });
+
+      // Reset upload progress
+      setUploadProgress(0);
 
       // API Submission
       const response = await fetch('/api/review-submission', {
@@ -155,6 +208,8 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
     } catch (error) {
       console.error('Submission error:', error);
       alert("Failed to submit review. Please try again.");
+      // Reset upload progress in case of error
+      setUploadProgress(0);
     }
   };
 

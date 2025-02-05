@@ -164,6 +164,7 @@ export default function ProductForm() {
   
       const result = await response.json();
       console.log('Review created:', result);
+      alert(`${formData.category === 'product' ? 'Product' : 'Service'} "${formData.categoryName}" created successfully!`);
       router.push(`${window.location.origin}/${result.reviewUrl}`)
     } catch (error) {
       console.error('Error creating review:', error);
