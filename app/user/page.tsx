@@ -142,7 +142,6 @@ export default function Home() {
     const textArea = document.createElement('textarea');
     textArea.value = text;
     
-    // Make the textarea out of viewport
     textArea.style.position = 'fixed';
     textArea.style.left = '-9999px';
     document.body.appendChild(textArea);

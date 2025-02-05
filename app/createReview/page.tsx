@@ -44,6 +44,7 @@ export default function ProductForm() {
   });
 
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFormData(prev => ({
@@ -54,36 +55,63 @@ export default function ProductForm() {
 
   const uploadImagesToSupabase = async (files: File[], category: string) => {
     try {
-      const uploadedUrls = [];
-      
-      for (const file of files) {
+      const uploadPromises = files.map(async (file, index) => {
+        // Validate file before upload
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        const maxSize = 5 * 1024 * 1024; // 5MB
+
+        if (!allowedTypes.includes(file.type)) {
+          alert(`Invalid image type: ${file.name}. Only JPEG, PNG, and WebP are allowed.`);
+          console.error(`Invalid file type: ${file.name}`);
+          return null;
+        }
+
+        if (file.size > maxSize) {
+          console.error(`File ${file.name} is too large`);
+          return null;
+        }
+
         const fileExt = file.name.split('.').pop();
         const folderName = category === 'product' ? 'product images' : 'service images';
         const fileName = `${folderName}/${uuidv4()}.${fileExt}`;
 
+        // Upload file
         const { data, error } = await supabase.storage
           .from('images')
           .upload(fileName, file);
 
         if (error) {
           console.error('Error uploading file:', error.message);
-          continue;
+          return null;
         }
 
+        // Get public URL
         if (data?.path) {
           const { data: fileData } = await supabase.storage
             .from('images')
             .getPublicUrl(data.path);
 
-          if (fileData?.publicUrl) {
-            uploadedUrls.push(fileData.publicUrl);
-          }
-        }
-      }
+          // Update progress
+          setUploadProgress((prevProgress) => 
+            Math.min(100, Math.round(((index + 1) / files.length) * 100))
+          );
 
-      return uploadedUrls;
+          return fileData?.publicUrl || null;
+        }
+
+        return null;
+      });
+
+      // Execute uploads in parallel
+      const uploadedUrls = await Promise.all(uploadPromises);
+      
+      // Reset progress after completion
+      setUploadProgress(0);
+
+      return uploadedUrls.filter(url => url !== null);
     } catch (error) {
       console.error('Error in image upload:', error);
+      setUploadProgress(0);
       return [];
     }
   };
@@ -96,8 +124,6 @@ export default function ProductForm() {
         ? JSON.parse(localStorage.getItem('userAuth')).uid
         : null;
       
-      console.log('User ID:', userId);
-
       if (!userId) {
         throw new Error('User not authenticated');
       }
@@ -107,10 +133,13 @@ export default function ProductForm() {
         throw new Error('Category and name are required');
       }
   
+      // Limit number of images
+      const limitedImages = formData.images.slice(0, 2);
+  
       // Upload images to Supabase Storage
       let uploadedImageUrls: string[] = [];
-      if (formData.images.length > 0) {
-        uploadedImageUrls = await uploadImagesToSupabase(formData.images, formData.category);
+      if (limitedImages.length > 0) {
+        uploadedImageUrls = await uploadImagesToSupabase(limitedImages, formData.category);
       }
   
       // Send data to API including image URLs
