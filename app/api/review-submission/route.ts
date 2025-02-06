@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { supabase } from '../../../supabase/supbaseclient'
 
 const prisma = new PrismaClient();
 
@@ -17,7 +16,7 @@ export async function POST(request: NextRequest) {
     const ratingsStr = formData.get('ratings')?.toString();
     const review = formData.get('review')?.toString();
     const summary = formData.get('summary')?.toString();
-    const images = formData.getAll('images') as File[];
+    const images = formData.getAll('images') as string[];
 
     // Validate required fields
     const validationErrors: string[] = [];
@@ -50,35 +49,8 @@ export async function POST(request: NextRequest) {
     const finalUserName = isAnonymous ? 'Anonymous User' : (userName || 'User');
     const finalUserImage = isAnonymous ? '/anonymous-avatar.png' : (userImage || '/default-avatar.png');
 
-    // Parallel image upload with improved error handling
-    const imageUploadPromises = images
-      .filter(file => file instanceof File && file.size > 0)
-      .map(async (file) => {
-        try {
-          const fileName = `review images/${id}_${Date.now()}_${file.name}`;
-          const { data, error } = await supabase.storage
-            .from('images')
-            .upload(fileName, file);
-  
-          if (error) {
-            console.error(`Upload error for ${fileName}:`, error);
-            return null;
-          }
-  
-          const { data: { publicUrl } } = supabase.storage
-            .from('images')
-            .getPublicUrl(fileName);
-  
-          return publicUrl;
-        } catch (uploadError) {
-          console.error('Unexpected upload error:', uploadError);
-          return null;
-        }
-      });
-
-    // Wait for all uploads to complete, filter out any failed uploads
-    const imageUrls = (await Promise.all(imageUploadPromises))
-      .filter((url): url is string => url !== null);
+    // No need for image upload processing, just use the provided URLs
+    const imageUrls = images.filter(url => url && typeof url === 'string');
 
     const finalId = id as string;
     const finalUserId = userId as string;

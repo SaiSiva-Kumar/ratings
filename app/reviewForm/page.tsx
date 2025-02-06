@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Star, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import {supabase} from '../../supabase/supbaseclient'
 
 interface ReviewFormProps {
   reviewType: 'signed' | 'anonymous';
@@ -107,6 +108,69 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
     });
   };
 
+  const uploadImagesToSupabase = async (images: { file: File, preview: string }[]) => {
+    try {
+      const uploadPromises = images.map(async (imageObj, index) => {
+        const file = imageObj.file;
+        // Validate file before upload
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        const maxSize = 5 * 1024 * 1024; // 5MB
+
+        if (!allowedTypes.includes(file.type)) {
+          alert(`Invalid image type: ${file.name}. Only JPEG, PNG, and WebP are allowed.`);
+          console.error(`Invalid file type: ${file.name}`);
+          return null;
+        }
+
+        if (file.size > maxSize) {
+          console.error(`File ${file.name} is too large`);
+          return null;
+        }
+
+        const fileExt = file.name.split('.').pop();
+        const fileName = `review images/${productId}_${Date.now()}_${index}.${fileExt}`;
+
+        // Upload file
+        const { data, error } = await supabase.storage
+          .from('images')
+          .upload(fileName, file);
+
+        if (error) {
+          console.error('Error uploading file:', error.message);
+          return null;
+        }
+
+        // Get public URL
+        if (data?.path) {
+          const { data: fileData } = supabase.storage
+            .from('images')
+            .getPublicUrl(data.path);
+
+          // Update progress
+          setUploadProgress((prevProgress) => 
+            Math.min(100, Math.round(((index + 1) / images.length) * 100))
+          );
+
+          return fileData?.publicUrl || null;
+        }
+
+        return null;
+      });
+
+      // Execute uploads in parallel
+      const uploadedUrls = await Promise.all(uploadPromises);
+      
+      // Reset progress after completion
+      setUploadProgress(0);
+
+      return uploadedUrls.filter(url => url !== null);
+    } catch (error) {
+      console.error('Error in image upload:', error);
+      setUploadProgress(0);
+      return [];
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -133,6 +197,12 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
     }
 
     try {
+      // Upload images to Supabase Storage first
+      let uploadedImageUrls: string[] = [];
+      if (images.length > 0) {
+        uploadedImageUrls = await uploadImagesToSupabase(images);
+      }
+
       const formData = new FormData();
       
       formData.append('id', productId);
@@ -169,30 +239,10 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
       formData.append('userImage', userImage);
       formData.append('isAnonymous', (reviewType === 'anonymous').toString());
 
-      // Parallel image upload preparation
-      const imageUploadPromises = images.slice(0, 2).map((imageObj, index) => {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            // Update progress
-            setUploadProgress(Math.round(((index + 1) / images.length) * 100));
-            resolve(imageObj.file);
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(imageObj.file);
-        });
+      // Append uploaded image URLs instead of files
+      uploadedImageUrls.forEach((url, index) => {
+        formData.append('images', url);
       });
-
-      // Wait for all image uploads to complete
-      const uploadedImages = await Promise.all(imageUploadPromises);
-
-      // Append images to form data
-      uploadedImages.forEach((file) => {
-        formData.append('images', file);
-      });
-
-      // Reset upload progress
-      setUploadProgress(0);
 
       // API Submission
       const response = await fetch('/api/review-submission', {
