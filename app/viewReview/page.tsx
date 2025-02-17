@@ -74,6 +74,8 @@ export default function ViewReviewPage({
 
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
+  const [isCurrentUserReview, setIsCurrentUserReview] = useState(false);
+
   const handleReviewTypeSelect = (type: 'signed' | 'anonymous') => {
     if (onReviewTypeSelect) {
       onReviewTypeSelect(type);
@@ -84,6 +86,11 @@ export default function ViewReviewPage({
   };
 
   const handleAddReviewClick = () => {
+    // If the current user created this review, do nothing
+    if (isCurrentUserReview) {
+      return;
+    }
+
     if (onAddReviewClick) {
       onAddReviewClick();
     } else {
@@ -129,6 +136,13 @@ export default function ViewReviewPage({
         }
         const data = await response.json();
         setReview(data);
+
+        // Check if the review was created by the current user
+        const userAuthString = localStorage.getItem('userAuth');
+        if (userAuthString) {
+          const userAuth = JSON.parse(userAuthString);
+          setIsCurrentUserReview(data.userId === userAuth.uid);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error fetching review');
       }
@@ -138,125 +152,125 @@ export default function ViewReviewPage({
     fetchReviewList();
   }, [id]);
 
-  const handleSignedReviewSignIn = async () => {
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;    
-      setUser(user);
-      setShowReviewInput(true);
-    } catch (error) {
-      console.error('Sign-in error', error instanceof Error ? error.message : 'Unknown error');
-    }
-  };
+  // const handleSignedReviewSignIn = async () => {
+  //   try {
+  //     const result = await signInWithPopup(auth, googleProvider);
+  //     const user = result.user;    
+  //     setUser(user);
+  //     setShowReviewInput(true);
+  //   } catch (error) {
+  //     console.error('Sign-in error', error instanceof Error ? error.message : 'Unknown error');
+  //   }
+  // };
 
   const handleStarClick = (index: number) => {
     setRating(index);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      const combinedFiles = [...selectedFiles, ...Array.from(files)].slice(0, 2);
-      setSelectedFiles(combinedFiles);
+  // const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const files = e.target.files;
+  //   if (files) {
+  //     const combinedFiles = [...selectedFiles, ...Array.from(files)].slice(0, 2);
+  //     setSelectedFiles(combinedFiles);
 
-      const filePreviewUrls = combinedFiles.map(file => URL.createObjectURL(file));
-      setPreviews(filePreviewUrls);
-    }
-  };
+  //     const filePreviewUrls = combinedFiles.map(file => URL.createObjectURL(file));
+  //     setPreviews(filePreviewUrls);
+  //   }
+  // };
 
-  const removePreview = (indexToRemove: number) => {
-    setPreviews(previews.filter((_, index) => index !== indexToRemove));
-    setSelectedFiles(selectedFiles.filter((_, index) => index !== indexToRemove));
-  };
+  // const removePreview = (indexToRemove: number) => {
+  //   setPreviews(previews.filter((_, index) => index !== indexToRemove));
+  //   setSelectedFiles(selectedFiles.filter((_, index) => index !== indexToRemove));
+  // };
 
-  const handleSubmitReview = async (e: FormEvent) => {
-    e.preventDefault();
+  // const handleSubmitReview = async (e: FormEvent) => {
+  //   e.preventDefault();
   
-    if (!id) {
-      setError('No review ID found');
-      return;
-    }
+  //   if (!id) {
+  //     setError('No review ID found');
+  //     return;
+  //   }
   
-    if (rating === 0) {
-      setError('Please provide a rating');
-      return;
-    }
+  //   if (rating === 0) {
+  //     setError('Please provide a rating');
+  //     return;
+  //   }
   
-    if (reviewText.trim().length < 10) {
-      setError('Review must be at least 10 characters long');
-      return;
-    }
+  //   if (reviewText.trim().length < 10) {
+  //     setError('Review must be at least 10 characters long');
+  //     return;
+  //   }
   
-    if (reviewSummary.trim().length < 5) {
-      setError('Review summary must be at least 5 characters long');
-      return;
-    }
+  //   if (reviewSummary.trim().length < 5) {
+  //     setError('Review summary must be at least 5 characters long');
+  //     return;
+  //   }
   
-    try {
-      const formData = new FormData();
+  //   try {
+  //     const formData = new FormData();
       
-      const fields = [
-        { key: 'id', value: id },
-        { key: 'userId', value: user?.uid || 'anonymous' },
-        { key: 'userName', value: user?.displayName || 'Anonymous User' },
-        { key: 'userImage', value: user?.photoURL || '/anonymous-avatar.png' },
-        { key: 'isAnonymous', value: (user === null).toString() },
-        { key: 'ratings', value: rating.toString() },
-        { key: 'review', value: reviewText },
-        { key: 'summary', value: reviewSummary }
-      ];
+  //     const fields = [
+  //       { key: 'id', value: id },
+  //       { key: 'userId', value: user?.uid || 'anonymous' },
+  //       { key: 'userName', value: user?.displayName || 'Anonymous User' },
+  //       { key: 'userImage', value: user?.photoURL || '/anonymous-avatar.png' },
+  //       { key: 'isAnonymous', value: (user === null).toString() },
+  //       { key: 'ratings', value: rating.toString() },
+  //       { key: 'review', value: reviewText },
+  //       { key: 'summary', value: reviewSummary }
+  //     ];
   
-      fields.forEach(field => {
-        formData.append(field.key, field.value);
-      });
+  //     fields.forEach(field => {
+  //       formData.append(field.key, field.value);
+  //     });
   
-      selectedFiles.slice(0, 2).forEach((file) => {
-        formData.append('images', file);
-      });
+  //     selectedFiles.slice(0, 2).forEach((file) => {
+  //       formData.append('images', file);
+  //     });
   
-      const response = await fetch('/api/review-submission', {
-        method: 'POST',
-        body: formData
-      });
+  //     const response = await fetch('/api/review-submission', {
+  //       method: 'POST',
+  //       body: formData
+  //     });
   
-      console.log('Response status:', response.status);
-      const responseJson = await response.json;
+  //     console.log('Response status:', response.status);
+  //     const responseJson = await response.json;
   
-      try {
-        console.log('Parsed Response:', responseJson);
-      } catch (parseError) {
-        console.error('Failed to parse response:', parseError);
-      }
+  //     try {
+  //       console.log('Parsed Response:', responseJson);
+  //     } catch (parseError) {
+  //       console.error('Failed to parse response:', parseError);
+  //     }
   
-      if (!response.ok) {
-        throw new Error(responseJson || 'Failed to submit review');
-      }
+  //     if (!response.ok) {
+  //       throw new Error(responseJson || 'Failed to submit review');
+  //     }
   
-      alert('Review submitted successfully!');
+  //     alert('Review submitted successfully!');
       
-      // Fetch and update reviews after submission
-      const refreshResponse = await fetch(`/api/reviews-list?id=${id}`);
-      const refreshData = await refreshResponse.json();
+  //     // Fetch and update reviews after submission
+  //     const refreshResponse = await fetch(`/api/reviews-list?id=${id}`);
+  //     const refreshData = await refreshResponse.json();
       
-      // Update reviews and stats after submission
-      setReviews(refreshData.reviews);
-      setStats({
-        signedInReviewCount: refreshData.signedInReviewCount,
-        averageRating: refreshData.averageRating
-      });
+  //     // Update reviews and stats after submission
+  //     setReviews(refreshData.reviews);
+  //     setStats({
+  //       signedInReviewCount: refreshData.signedInReviewCount,
+  //       averageRating: refreshData.averageRating
+  //     });
       
-      setRating(0);
-      setReviewText('');
-      setReviewSummary('');
-      setSelectedFiles([]);
-      setPreviews([]);
-      setShowReviewInput(false);
-      setError(null);
-    } catch (error) {
-      console.error('Full submit review error:', error);
-      setError(error instanceof Error ? error.message : 'Failed to submit review');
-    }
-  };
+  //     setRating(0);
+  //     setReviewText('');
+  //     setReviewSummary('');
+  //     setSelectedFiles([]);
+  //     setPreviews([]);
+  //     setShowReviewInput(false);
+  //     setError(null);
+  //   } catch (error) {
+  //     console.error('Full submit review error:', error);
+  //     setError(error instanceof Error ? error.message : 'Failed to submit review');
+  //   }
+  // };
 
   const handleImageClick = (imageUrl: string, category: Review['category']) => {
     setSelectedImage({ url: imageUrl, type: category });
@@ -370,6 +384,19 @@ export default function ViewReviewPage({
 
   return (
     <div className={styles.container}>
+      {/* Add conditional rendering for share review image */}
+      {!isCurrentUserReview && (
+        <div className={`${styles.shareReviewImageContainer} absolute top-4 right-4`}>
+          <Image
+            src="/images/share_review_page.png"
+            alt="Share Review"
+            width={100}
+            height={100}
+            className={styles.shareReviewImage}
+          />
+        </div>
+      )}
+      
       <button 
         className={`${styles.backButton} flex items-center`} 
         onClick={handleBackClick}
@@ -397,12 +424,26 @@ export default function ViewReviewPage({
       <h2 className={styles.title}>{review.name}</h2>
       {renderDescription()}
 
-      {!showReviewInput && (
+      {!showReviewInput && isCurrentUserReview && (
         <button 
-          className={styles.addReviewButton} 
-          onClick={handleAddReviewClick}
+          onClick={handleAddReviewClick} 
+          className={styles.addReviewButton}
         >
-          Add a Review
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            width: '100%', 
+            gap: '8px' 
+          }}>
+            Share the Review Page
+            <Image 
+              src="/images/share.png" 
+              alt="Share Review" 
+              width={18} 
+              height={18} 
+            />
+          </div>
         </button>
       )}
 
@@ -426,9 +467,65 @@ export default function ViewReviewPage({
         />
       )}
 
-      {/* Existing review list and details */}
-      {stats.signedInReviewCount > 0 && (
+      {/* Condition to show Overall Signed Reviews */}
+      {!isCurrentUserReview && reviews.length === 0 && (
         <div style={{ marginTop: '2rem' }}>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem', fontFamily: 'Roboto, sans-serif' }}>
+            Overall Signed Reviews
+          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+            <span style={{ fontSize: '2rem', fontWeight: '700', color: '#000', fontFamily: 'Roboto, sans-serif' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>Unrated</span>
+                {[...Array(5)].map((_, index) => (
+                  <Image 
+                    key={index}
+                    src="/images/Vector_2.png" 
+                    alt="Unfilled Star" 
+                    width={22.83} 
+                    height={21.8} 
+                  />
+                ))}
+              </div>
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Existing review list and details */}
+      {reviews.length === 0 && (
+        <div className={styles.noReviewsContainer} style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '200px', // Adjust height as needed
+          textAlign: 'center'
+        }}>
+          <div 
+            className={styles.noData} 
+            style={{ 
+              color: '#000000', 
+              fontFamily: 'Roboto, sans-serif',
+              fontSize: '1rem',
+              fontWeight: '400',
+              maxWidth: '300px'
+            }}
+          >
+            {!isCurrentUserReview 
+              ? `No ratings given yet. If you used this ${review.category}, feel free to leave one.` 
+              : `No reviews yet`}
+          </div>
+        </div>
+      )}
+
+      {/* Existing reviews section */}
+      {stats.signedInReviewCount > 0 && (
+        <div 
+          style={{ 
+            marginTop: '2rem',
+            paddingBottom: '100px' // Add significant bottom padding
+          }}
+        >
           <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem', fontFamily: 'Roboto, sans-serif' }}>
             Overall Signed Reviews
           </h3>
@@ -513,6 +610,47 @@ export default function ViewReviewPage({
               </div>
             ))}
           </div>
+        </div>
+      )}
+      {/* Bottom Add a Review button for non-review creators */}
+      {!isCurrentUserReview && !showReviewTypePopup && (
+        <div style={{ 
+          position: 'fixed',
+          bottom: '0',
+          left: '0',
+          width: '100%',
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          padding: '1rem 0',
+          backgroundColor: '#F0F0F0',
+          zIndex: 1000,
+          boxShadow: '0 -2px 4px rgba(0,0,0,0.1)',
+          backdropFilter: 'blur(10px)', 
+          WebkitBackdropFilter: 'blur(10px)'
+        }}>
+          <button 
+            onClick={() => {
+              // Directly replicate the handleAddReviewClick logic
+              if (isCurrentUserReview) {
+                return;
+              }
+
+              if (onAddReviewClick) {
+                onAddReviewClick();
+              } else {
+                setShowReviewTypePopup(true);
+              }
+            }} 
+            className={styles.addReviewButton}
+            style={{ 
+              width: '354px',
+              height: '50px',
+              marginBottom: '10px'
+            }}
+          >
+            Add a Review
+          </button>
         </div>
       )}
       {selectedImage && (

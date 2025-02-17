@@ -9,12 +9,13 @@ import { supabase } from '../../supabase/supbaseclient';
 import { useRouter, useSearchParams, notFound } from 'next/navigation';
 import { useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
+import UploadCard from '../uploading/page';
 
 interface FormData {
   category: string;
   categoryName: string;
   description: string;
-  swadesicUrl: string;
+  Url: string;
   images: File[];
   isListed: boolean;
 }
@@ -38,13 +39,14 @@ export default function ProductForm() {
     category: '',
     categoryName: '',
     description: '',
-    swadesicUrl: '',
+    Url: '',
     images: [],
     isListed: false
   });
 
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFormData(prev => ({
@@ -120,6 +122,8 @@ export default function ProductForm() {
     e.preventDefault();
     
     try {
+      setIsUploading(true);
+      
       const userId = localStorage.getItem('userAuth')
         ? JSON.parse(localStorage.getItem('userAuth')).uid
         : null;
@@ -153,7 +157,7 @@ export default function ProductForm() {
           category: formData.category,
           name: formData.categoryName,
           description: formData.description,
-          url: formData.isListed ? formData.swadesicUrl : undefined,
+          url: formData.Url,
           images: uploadedImageUrls
         }),
       });
@@ -164,10 +168,12 @@ export default function ProductForm() {
   
       const result = await response.json();
       console.log('Review created:', result);
-      alert(`${formData.category === 'product' ? 'Product' : 'Service'} "${formData.categoryName}" created successfully!`);
+      
+      setIsUploading(false);
       router.push(`${window.location.origin}/${result.reviewUrl}`)
     } catch (error) {
       console.error('Error creating review:', error);
+      setIsUploading(false);
     }
   };
 
@@ -224,108 +230,108 @@ export default function ProductForm() {
 
 
 return (
-  <div className={styles.formContainer}>
-    <form onSubmit={handleSubmit} className={styles.form}>
-      <div className={styles.formHeader}>
-        <button 
-          className={`${styles.backButton} flex items-center`} 
-          onClick={handleBackClick}
-        >
-          <ArrowLeft className="mr-[0.8rem]" /> 
-          Create Review Page
-        </button>
-      </div>
-      <div className={styles.formGroup}>
-        <label className={styles.formLabel}>Select Category</label>
-        <select
-          className={styles.formSelect}
-          value={formData.category}
-          onChange={handleCategoryChange}
-        >
-          <option value="">Category</option>
-          <option value="product">Product</option>
-          <option value="service">Service</option>
-        </select>
-      </div>
-
-      <div className={styles.formGroup}>
-        <label className={styles.formLabel}>
-          {isProduct ? 'Product Name' : 'Service Name'}
-        </label>
-        <input
-          type="text"
-          placeholder={`Enter ${isProduct ? 'product' : 'service'} name`}
-          className={styles.formInput}
-          value={formData.categoryName}
-          maxLength={20}
-          onChange={(e) =>
-            setFormData((prev) => ({ ...prev, categoryName: e.target.value }))
-          }
-        />
-      </div>
-
-      <div className={styles.formGroup}>
-        <label className={styles.formLabel}>
-          {isProduct ? 'Product Images' : 'Service Images'} (up to 2) (optional)
-        </label>
-        <button
-          type="button"
-          onClick={() => document.getElementById('file-upload')?.click()}
-          className={styles.uploadButton}
-        >
-          Upload Image
-        </button>
-        <input
-          id="file-upload"
-          type="file"
-          accept="image/*"
-          multiple
-          className={styles.hidden}
-          onChange={handleImageChange}
-        />
-      </div>
-
-      <div className={styles.imagePreviews}>{previewImages}</div>
-
-      <div className={styles.formGroup}>
-        <label className={styles.formLabel}>Description</label>
-        <textarea
-          placeholder="Description"
-          className={styles.formTextarea}
-          value={formData.description}
-          onChange={(e) =>
-            setFormData((prev) => ({ ...prev, description: e.target.value }))
-          }
-        />
-      </div>
-
-      <div className={styles.formGroup}>
-        <label className={styles.formLabel}>
-          Did you list this {isProduct ? 'product' : 'service'} in your Swadesic Store?
-        </label>
-        <div className={styles.radioGroup}>
-          <label className={styles.radioLabel}>
-            <input
-              type="radio"
-              className={styles.radioInput}
-              checked={formData.isListed === true}
-              onChange={() => setFormData((prev) => ({ ...prev, isListed: true }))}
-            />
-            <span>Yes</span>
-          </label>
-          <label className={styles.radioLabel}>
-            <input
-              type="radio"
-              className={styles.radioInput}
-              checked={formData.isListed === false}
-              onChange={() => setFormData((prev) => ({ ...prev, isListed: false }))}
-            />
-            <span>No</span>
-          </label>
+  <>
+    <div className={styles.formContainer}>
+      <form onSubmit={handleSubmit} className={styles.form}>
+        <div className={styles.formHeader}>
+          <button 
+            className={`${styles.backButton} flex items-center`} 
+            onClick={handleBackClick}
+          >
+            <ArrowLeft className="mr-[0.8rem]" /> 
+            Create Review Page
+          </button>
         </div>
-      </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Select Category</label>
+          <select
+            className={styles.formSelect}
+            value={formData.category}
+            onChange={handleCategoryChange}
+          >
+            <option value="">Category</option>
+            <option value="product">Product</option>
+            <option value="service">Service</option>
+          </select>
+        </div>
 
-      {formData.isListed && (
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>
+            {isProduct ? 'Product Name' : 'Service Name'}
+          </label>
+          <input
+            type="text"
+            placeholder={`Enter ${isProduct ? 'product' : 'service'} name`}
+            className={styles.formInput}
+            value={formData.categoryName}
+            maxLength={20}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, categoryName: e.target.value }))
+            }
+          />
+        </div>
+
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>
+            {isProduct ? 'Product Images' : 'Service Images'} (up to 2) (optional)
+          </label>
+          <button
+            type="button"
+            onClick={() => document.getElementById('file-upload')?.click()}
+            className={styles.uploadButton}
+          >
+            Upload Image
+          </button>
+          <input
+            id="file-upload"
+            type="file"
+            accept="image/*"
+            multiple
+            className={styles.hidden}
+            onChange={handleImageChange}
+          />
+        </div>
+
+        <div className={styles.imagePreviews}>{previewImages}</div>
+
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Description</label>
+          <textarea
+            placeholder="Description"
+            className={styles.formTextarea}
+            value={formData.description}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, description: e.target.value }))
+            }
+          />
+        </div>
+
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>
+            Did you list this {isProduct ? 'product' : 'service'} in your Swadesic Store?
+          </label>
+          <div className={styles.radioGroup}>
+            <label className={styles.radioLabel}>
+              <input
+                type="radio"
+                className={styles.radioInput}
+                checked={formData.isListed === true}
+                onChange={() => setFormData((prev) => ({ ...prev, isListed: true }))}
+              />
+              <span>Yes</span>
+            </label>
+            <label className={styles.radioLabel}>
+              <input
+                type="radio"
+                className={styles.radioInput}
+                checked={formData.isListed === false}
+                onChange={() => setFormData((prev) => ({ ...prev, isListed: false }))}
+              />
+              <span>No</span>
+            </label>
+          </div>
+        </div>
+
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>
             Swadesic URL of the {isProduct ? 'Product' : 'Service'}
@@ -334,25 +340,30 @@ return (
             type="url"
             placeholder="Enter URL"
             className={styles.formInput}
-            value={formData.swadesicUrl}
+            value={formData.Url}
             onChange={(e) =>
-              setFormData((prev) => ({ ...prev, swadesicUrl: e.target.value }))
+              setFormData((prev) => ({ ...prev, Url: e.target.value }))
             }
           />
         </div>
-      )}
 
-      <div className={styles.formGroup}>
-        <button 
-          type="submit" 
-          className={`${styles.submitButton} ${(!formData.category || !formData.categoryName) ? 'opacity-50 cursor-not-allowed' : ''}`}
-          disabled={!formData.category || !formData.categoryName}
-        >
-          Create Review Page
-        </button>
+        <div className={styles.formGroup}>
+          <button 
+            type="submit" 
+            className={`${styles.submitButton} ${(!formData.category || !formData.categoryName) ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={!formData.category || !formData.categoryName}
+          >
+            Create Review Page
+          </button>
+        </div>
+      </form>
+    </div>
+    {isUploading && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <UploadCard />
       </div>
-    </form>
-  </div>
+    )}
+  </>
 );
 
 }

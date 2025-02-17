@@ -250,11 +250,30 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
         body: formData
       });
 
-      if (!response.ok) throw new Error('Failed to submit review');
+      if (response.ok) {
+        const responseData = await response.json();
+        const reviewId = responseData.reviewSubmission.dummyId;
+        console.log('Review ID:', reviewId);
 
-      alert('Review submitted successfully!');
-      onSubmitSuccess?.();
+        // Update URL to include reviewId
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete('reviewType');
+        newUrl.searchParams.set('reviewId', reviewId.toString());
 
+        // base64 encode the reviewId
+        const id = newUrl.searchParams.get('id')
+        const userreviewId = newUrl.searchParams.get('reviewId')
+        const queryString = `id=${id}&reviewId=${userreviewId}`
+        const encodedQueryString = btoa(queryString);
+
+        console.log(`what is this refer too: ${window.location.origin}/userReivew?data=${encodedQueryString}`)
+
+        router.push(newUrl.toString());
+
+        onSubmitSuccess?.(reviewId);
+      } else {
+        throw new Error('Failed to submit review');
+      }
     } catch (error) {
       console.error('Submission error:', error);
       alert("Failed to submit review. Please try again.");

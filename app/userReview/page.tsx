@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import ReviewForm from '../reviewForm/page';
+import UploadCard from '../uploading/page';
 import styles from './userReview.module.css';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
@@ -33,9 +34,8 @@ export default function UserReviewPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const id = searchParams.get('id');
-  console.log(id)
+  const reviewId = searchParams.get('reviewId');
   const reviewType = searchParams.get('reviewType') as 'signed' | 'anonymous' | null;
-  console.log(reviewType)
   
   const [product, setProduct] = useState<Product | null>(null);
   const [showReviewTypeSelector, setShowReviewTypeSelector] = useState(false);
@@ -43,6 +43,7 @@ export default function UserReviewPage() {
   const [showReviewForm, setShowReviewForm] = useState(reviewType ? true : false);
   const [userReview, setUserReview] = useState<UserReview | null>(null);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -65,6 +66,32 @@ export default function UserReviewPage() {
     fetchProduct();
   }, [id]);
 
+  useEffect(() => {
+    const fetchUserReview = async () => {
+      if (!reviewId) return;
+
+      try {
+        const response = await fetch(`/api/user-fresh-review?dummyId=${reviewId}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch review');
+        }
+        
+        const reviewData = await response.json();
+        const dataId = reviewData.id;
+
+        if(id !== dataId) return router.push('/404')
+
+        setUserReview(reviewData);
+        setShowReviewForm(false);
+      } catch (error) {
+        console.error('Error fetching user review:', error);
+      }
+    };
+
+    fetchUserReview();
+  }, [reviewId]);
+
   const handleReviewTypeSelect = (type: 'signed' | 'anonymous') => {
     setSelectedReviewType(type);
     setShowReviewTypeSelector(false);
@@ -76,35 +103,31 @@ export default function UserReviewPage() {
     setSelectedReviewType(null);
   };
 
-  const handleReviewSubmitSuccess = async () => {
+  const handleReviewSubmitSuccess = async (dummyId: number) => {
     try {
-      const user = reviewType === 'signed' 
-        ? JSON.parse(localStorage.getItem('userAuth')) 
-        : null;
+      setIsUploading(true);
 
-    
-
-      if (id) {
-        const queryParams = new URLSearchParams({
-          productId: id,
-          reviewType: reviewType || 'anonymous',
-          ...(user ? { userId: user.uid } : {})
-        });
-
-        const response = await fetch(`/api/user-fresh-review?${queryParams.toString()}`);
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch review');
-        }
-        
-        const reviewData = await response.json();
-        setUserReview(reviewData);
+      if (!dummyId) {
+        console.error('No dummyId provided');
+        setIsUploading(false);
+        return;
       }
 
+      const response = await fetch(`/api/user-fresh-review?dummyId=${dummyId}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch review');
+      }
+      
+      const reviewData = await response.json();
+      setUserReview(reviewData);
       setShowReviewForm(false);
+      
+      setIsUploading(false);
     } catch (error) {
       console.error('Error fetching user review:', error);
       alert('Could not retrieve your review. Please try again.');
+      setIsUploading(false);
     }
   };
 
@@ -180,8 +203,8 @@ export default function UserReviewPage() {
         </div>
       )}
 
-      {/* Review Form */}
-      {showReviewForm && selectedReviewType && id && (
+      {/* Show review form only if no review exists and no reviewId is present */}
+      {!userReview && !reviewId && showReviewForm && selectedReviewType && id && (
         <ReviewForm 
           productId={id} 
           reviewType={selectedReviewType} 
@@ -231,7 +254,7 @@ export default function UserReviewPage() {
                 </div>
 
               {/* Display images for this review */}
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
                 {userReview.images && userReview.images.length > 0 && userReview.images.map((imageUrl, imageIdx) => (
                   <Image
                     key={`review-image-${userReview.id}-${imageIdx}`}
@@ -239,10 +262,8 @@ export default function UserReviewPage() {
                     alt={`Review image ${imageIdx + 1}`}
                     width={90}
                     height={90}
-                    style={{ borderRadius: '4px' }}
-                    objectFit="cover"
+                    className={styles.image}
                     onClick={() => handleImageClick(imageUrl, userReview.category || 'product')}
-                    className={styles.clickableImage}
                   />
                 ))}
               </div>
@@ -258,6 +279,24 @@ export default function UserReviewPage() {
                 </div>
               </div>
           </div>
+        </div>
+      )}
+
+      {(userReview || reviewId) && (
+        <div className={`${styles.shareReviewImageContainer} absolute top-4 right-4`}>
+          <Image
+            src="/images/share_review_page.png"
+            alt="Share Review"
+            width={13.5}
+            height={15}
+            className={styles.shareReviewImage}
+          />
+        </div>
+      )}
+
+      {isUploading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <UploadCard />
         </div>
       )}
     </div>

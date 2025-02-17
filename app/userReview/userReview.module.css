@@ -79,3 +79,10 @@
 .viewLessButton:hover {
   text-decoration: underline;
 }
+
+.shareReviewImageContainer {
+  position: absolute;
+  top: 2rem;
+  right: 1rem;
+  z-index: 10;
+}

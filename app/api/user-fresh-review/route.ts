@@ -6,39 +6,25 @@ const prisma = new PrismaClient();
 export async function GET(request: NextRequest) {
   try {
     const url = new URL(request.url);
-    const productId = url.searchParams.get('productId');
-    const userId = url.searchParams.get('userId');
-    const reviewType = url.searchParams.get('reviewType') || 'signed';
+    const dummyIdParam = url.searchParams.get('dummyId');
 
-    console.log('Fetching user review:', { 
-      productId, 
-      userId, 
-      reviewType
-    });
-
-    if (!productId) {
+    if (!dummyIdParam) {
       return NextResponse.json({ 
-        error: 'Product ID is required' 
+        error: 'Dummy ID is required' 
       }, { status: 400 });
     }
 
-    // Prepare query conditions based on review type
-    const queryConditions = reviewType === 'signed' 
-      ? { 
-          id: productId,
-          userId: userId,
-          // Exclude anonymous user IDs for signed reviews
-          isAnonymous: false
-        }
-      : { 
-          id: productId,
-          // For anonymous reviews, userId must contain '_'
-          isAnonymous: true
-        };
+    // Convert dummyId to integer
+    const dummyId = parseInt(dummyIdParam, 10);
 
-    const userReview = await prisma.review_submission.findFirst({
-      where: queryConditions,
-      orderBy: { createdAt: 'desc' }, // Most recent first
+    if (isNaN(dummyId)) {
+      return NextResponse.json({ 
+        error: 'Invalid Dummy ID' 
+      }, { status: 400 });
+    }
+
+    const userReview = await prisma.review_submission.findUnique({
+      where: { dummyId },
       select: {
         id: true,
         userId: true,
@@ -48,23 +34,22 @@ export async function GET(request: NextRequest) {
         review: true,
         summary: true,
         images: true,
-        createdAt: true
+        createdAt: true,
+        isAnonymous: true
       }
     });
 
-    console.log('Fetched User Review:', userReview);
-
     if (!userReview) {
       return NextResponse.json({ 
-        error: 'No review found for this product and user type' 
+        error: 'Review not found' 
       }, { status: 404 });
     }
 
     return NextResponse.json(userReview);
   } catch (error) {
-    console.error('Error fetching user product review:', error);
-    return NextResponse.json({
-      error: 'Failed to fetch user product review'
+    console.error('Error fetching user review:', error);
+    return NextResponse.json({ 
+      error: 'Failed to fetch review' 
     }, { status: 500 });
   } finally {
     await prisma.$disconnect();

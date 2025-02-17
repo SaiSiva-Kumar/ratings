@@ -23,7 +23,8 @@ export async function GET(request: NextRequest) {
         name: true,
         Description: true,
         images: true,
-        url: true
+        url: true,
+        userId: true
       }
     });
 
